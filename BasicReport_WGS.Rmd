@@ -71,6 +71,7 @@ library(stringr)
 library(reshape2)
 library(forcats)
 library(ggtree)
+library(here)
 
 ```
 
@@ -123,7 +124,7 @@ min_reads <- 30000
 
 ### setwd
 #fill in your project dir (alternatively, you can use the "here" library)
-#root_dir = "/Volumes/microbiome/analysis/[username]/[investigator_project_name]"
+root_dir = here()
 
 ### mapping file path
 mapping_file_fp <- list.files(file.path(root_dir, "metadata"), pattern = ".tsv|.txt", full.names = TRUE)
