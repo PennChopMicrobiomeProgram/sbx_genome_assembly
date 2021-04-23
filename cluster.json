@@ -1,27 +1,22 @@
 {
   "__default__" :
   {
-    "h_vmem" : "8G",
-    "mem_free" : "4G",
-    "m_mem_free" : "4G",
-    "output" : "\"'logs/cluster/{rule}.{wildcards}.out'\""
+    "memcpu" : "8G",
+    "name" : "WGS_default"
   },
   "run_spades_paired" :
   {
-    "h_vmem" : "8G",
-    "mem_free" : "4G",
-    "m_mem_free" : "4G"
+    "memcpu" : "18G",
+    "name" : "run_spades_paired"
   },
   "run_spades_unpaired" :
   {
-    "h_vmem" : "8G",
-    "mem_free" : "4G",
-    "m_mem_free" : "4G"
+    "memcpu" : "18G",
+    "name" : "run_spades_unpaired"
   },
   "checkm_tree":
   {
-    "h_vmem" : "18G",
-    "mem_free" : "16G",
-    "m_mem_free" : "16G"
+    "memcpu" : "64G",
+    "name" : "checkm_tree"
   }
 }
