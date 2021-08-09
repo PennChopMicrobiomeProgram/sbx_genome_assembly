@@ -22,12 +22,17 @@ rule all_SPARCQ:
        str(ASSEMBLY_FP/'read_mapping'/'all_numReads.csv'),
        str(ASSEMBLY_FP/'read_mapping'/'all_sliding_coverage.csv'),
        str(ASSEMBLY_FP/'anvio'/'GENOMES.db'),
-       str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt'),
-       ]
+       str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt')]
+
+def get_input(wildcards):
+  if Cfg['sbx_SPARCQ']['metagenome']:
+    return str(ASSEMBLY_FP/'contigs'/'{sample}-contigs.fa')
+  else:
+    return str(ASSEMBLY_FP/'spades_bins'/'{sample}'/'{sample}_assembled_contigs.fna')
 
 rule reformat_fasta:
     input: 
-        str(ASSEMBLY_FP/'spades_bins'/'{sample}'/'{sample}_assembled_contigs.fna')
+        get_input
     output:
         str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
     params:
@@ -49,7 +54,7 @@ rule get_contig_db:
     output:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEhmm')
     threads:
-      Cfg['sbx_SPARCQ']['threads']
+      Cfg['sbx_SPARCQ']['cog_threads']
     params:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
     conda:
@@ -70,7 +75,7 @@ rule cog_setup:
     output:
       str(ASSEMBLY_FP/'anvio'/'.DONEcogsetup')
     threads:
-      Cfg['sbx_SPARCQ']['threads']
+      Cfg['sbx_SPARCQ']['cog_threads']
     conda:
       "sbx_SPARCQ_conda_env.yml"
     shell:
@@ -87,7 +92,7 @@ rule ncbi_cogs:
     output:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEcog') 
     threads:
-      Cfg['sbx_SPARCQ']['threads']
+      Cfg['sbx_SPARCQ']['cog_threads']
     params:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
     conda:
@@ -138,7 +143,7 @@ rule scg_setup:
     output:
       str(ASSEMBLY_FP/'anvio'/'.DONEscgsetup')
     threads:
-      Cfg['sbx_SPARCQ']['threads']
+      Cfg['sbx_SPARCQ']['cog_threads']
     conda:
       "sbx_SPARCQ_conda_env.yml"
     shell:
@@ -169,23 +174,30 @@ rule anvi_scg_annotate:
       touch {output}
       """
 
+def is_meta(wildcards):
+  if Cfg['sbx_SPARCQ']['metagenome']:
+    return "--metagenome-mode"
+  else:
+    return ""
+
 rule anvi_classify:
     input:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEscg')
     output:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_taxon_classify.tsv')
     params:
-      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')    
+      db = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'),
+      meta = is_meta
     threads:
-      Cfg['sbx_SPARCQ']['threads']
+      Cfg['sbx_SPARCQ']['cog_threads']
     conda:
       "sbx_SPARCQ_conda_env.yml"
     shell:
       """
-      anvi-estimate-scg-taxonomy \
-        -c {params} \
-        -o {output} \
-        --num-threads {threads}
+        anvi-estimate-scg-taxonomy \
+          -c {params.db} \
+          -o {output} \
+          --num-threads {threads} {params.meta}
       """
 
 rule anvi_gen_stats:
@@ -195,8 +207,6 @@ rule anvi_gen_stats:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.hits')
     params:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
-    threads:
-      Cfg['sbx_SPARCQ']['threads']
     conda:
       "sbx_SPARCQ_conda_env.yml"
     shell:
@@ -212,7 +222,7 @@ rule anvi_completeness:
     params:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
     threads:
-      Cfg['sbx_SPARCQ']['threads']
+      Cfg['sbx_SPARCQ']['cog_threads']
     conda:
       "sbx_SPARCQ_conda_env.yml"
     shell:

@@ -6,17 +6,57 @@
   },
   "run_spades_paired" :
   {
-    "memcpu" : "18G",
+    "memcpu" : "16G",
     "name" : "run_spades_paired"
   },
   "run_spades_unpaired" :
   {
-    "memcpu" : "18G",
+    "memcpu" : "16G",
     "name" : "run_spades_unpaired"
+  },
+  "reformat_fasta":
+  {
+	  "memcpu" : "4G",
+	  "name" : "reformat_fasta"
+  },
+  "checkm_plot":
+  {
+	  "memcpu" : "64G",
+	  "name" : "checkm_plot"
   },
   "checkm_tree":
   {
     "memcpu" : "64G",
     "name" : "checkm_tree"
+  },
+  "get_contig_db":
+  {
+    "memcpu" : "128G",
+    "name" : "get_contig_db"
+  },
+  "prokka":
+  {
+    "memcpu" : "128G",
+    "name" : "prokka"
+  },
+  "cog_setup":
+  {
+    "memcpu" : "128G",
+    "name" : "cog_setup"
+  },
+  "ncbi_cogs":
+  {
+    "memcpu" : "128G",
+    "name" : "ncbi_cogs"
+  },
+  "scg_setup":
+  {
+    "memcpu" : "128G",
+    "name" : "scg_setup"
+  },
+  "anvi_scg_annotate":
+  {
+    "memcpu" : "128G",
+    "name" : "anvi_scg_annotate"
   }
 }

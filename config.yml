@@ -1,6 +1,8 @@
 sbx_SPARCQ:
   threads: 4
+  cog_threads: 48
   checkm_yml: /scr1/users/tuv/SPARCQ_test/CheckM.yml
   taxid_yml: /scr1/users/tuv/SPARCQ_test/NCBI_taxID.yml
   window_size: 5000
   sampling: 5000
+  metagenome: FALSE
