@@ -139,7 +139,7 @@ fastqc_fp = file.path(root_dir, "Data", "fastqc_quality.tsv")
 anvio_fp = file.path(root_dir, "Data", "anvio")
 
 ### directory holding sample directories with checkm results
-checkm_fp = file.path(root_dir, "Data", "checkm_output")
+checkm_fp = file.path(root_dir, "Data", "checkm_output", "summary")
 
 ### sliding_coverage
 sliding_fp = file.path(root_dir, "Data", "all_sliding_coverage.csv")
