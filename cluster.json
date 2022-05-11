@@ -19,11 +19,6 @@
 	  "memcpu" : "4G",
 	  "name" : "reformat_fasta"
   },
-  "checkm_plot":
-  {
-	  "memcpu" : "64G",
-	  "name" : "checkm_plot"
-  },
   "checkm_tree":
   {
     "memcpu" : "64G",
@@ -36,7 +31,7 @@
   },
   "prokka":
   {
-    "memcpu" : "128G",
+    "memcpu" : "16G",
     "name" : "prokka"
   },
   "cog_setup":
@@ -56,7 +51,17 @@
   },
   "anvi_scg_annotate":
   {
-    "memcpu" : "128G",
+    "memcpu" : "16G",
     "name" : "anvi_scg_annotate"
+  },
+  "get_profile":
+  {
+    "memcpu" : "16G",
+    "name" : "get_profile"
+  },
+  "get_sample_mismatches":
+  {
+    "memcpu" : "48G",
+    "name" : "get_sample_mismatches"
   }
 }

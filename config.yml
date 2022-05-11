@@ -1,8 +1,8 @@
-sbx_SPARCQ:
+sbx_WGS:
   threads: 4
-  cog_threads: 48
+  cog_db: /scr1/users/tuv/db/COG #path of previous downloaded COG db
+  cog_threads: 4
+  metagenome: FALSE
   checkm_yml: /scr1/users/tuv/SPARCQ_test/CheckM.yml
-  taxid_yml: /scr1/users/tuv/SPARCQ_test/NCBI_taxID.yml
   window_size: 5000
   sampling: 5000
-  metagenome: FALSE

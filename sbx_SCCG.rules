@@ -1,0 +1,510 @@
+# -*- mode: Snakemake -*-
+#
+# Rules for de novo assembly using SPAdes and post-assembly assessments
+
+from sunbeamlib import samtools
+from Bio import pairwise2, SeqIO
+import glob
+import pysam
+import re
+import yaml
+
+rule all_WGS:
+    input:
+      [expand([str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam.bai'),
+               str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn'),
+               str(ASSEMBLY_FP/'anvio'/'profiles'/'{sample}'/'PROFILE.db')
+              ],sample=Samples.keys()),
+      str(ASSEMBLY_FP/'checkm_output'/'all_extended_summary.tsv'),
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_contigs_map.tsv'),
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_hits.tsv'),
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_genes.tsv'),
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_completeness.tsv'),
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_classify.tsv'),
+      str(ASSEMBLY_FP/'read_mapping'/'all_coverage.csv'),
+      str(ASSEMBLY_FP/'read_mapping'/'all_numReads.csv'),
+      str(ASSEMBLY_FP/'read_mapping'/'all_sliding_coverage.csv'),
+      str(ASSEMBLY_FP/'anvio'/'GENOMES.db'),
+      str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt'),
+      str(ASSEMBLY_FP/'anvio'/'all_SCCG_mismatches.tsv')
+      ]
+
+def get_input(wildcards):
+  if Cfg['sbx_WGS']['metagenome']:
+    return str(ASSEMBLY_FP/'contigs'/'{sample}-contigs.fa')
+  else:
+    return str(ASSEMBLY_FP/'spades_bins'/'{sample}'/'{sample}_assembled_contigs.fna')
+
+rule reformat_fasta:
+    input: 
+        get_input
+    output:
+        str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
+    params:
+        simple_names_file = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_simplify_names.txt')
+    conda:
+       "sbx_SCCG_conda_env.yml"
+    shell:
+        """
+        anvi-script-reformat-fasta {input} \
+          --output-file {output} \
+          --min-len 200 \
+          --simplify-name \
+          --report-file {params.simple_names_file}
+        """
+
+rule prokka:
+    input:
+       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
+    output:
+       str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn')
+    params:
+       outdir = str(ANNOTATION_FP/'prokka'/'{sample}')
+    conda:
+       "sbx_SCCG_conda_env.yml"
+    shell:
+       """
+       prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 
+       """
+
+rule get_contig_db:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
+    output:
+      contigs = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'),
+      touch_hmm = str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEhmm')
+    threads:
+      Cfg['sbx_WGS']['cog_threads']
+    params:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-gen-contigs-database --contigs-fasta {input} \
+        --output-db-path {output.contigs} \
+        --project-name {wildcards.sample} && \
+      anvi-run-hmms --contigs-db {output.contigs} \
+        --num-threads {threads} && \
+      touch {output.touch_hmm}
+      """
+
+def anvi_setup(wildcards):
+  if Cfg['sbx_WGS']['cog_db']:
+    return "echo 'No need for COG setup'"
+  else:
+    num_threads = Cfg['sbx_WGS']['cog_threads']
+    return ("anvi-setup-ncbi-cogs \
+              --just-do-it \
+              --reset \
+              --num-threads " + str(num_threads))
+
+rule cog_setup:
+    input:
+      expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEhmm'), sample=Samples.keys())
+    output:
+      str(ASSEMBLY_FP/'anvio'/'.DONEcogsetup')
+    threads:
+      Cfg['sbx_WGS']['cog_threads']
+    params:
+      anvi_setup
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      {params} && \
+      touch {output}
+      """
+
+def get_cog_fp(wildcards):
+  if Cfg['sbx_WGS']['cog_db']:
+    return "--cog-data-dir " + str(Cfg['sbx_WGS']['cog_db'])
+  else:
+    return ""
+
+rule ncbi_cogs:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'.DONEcogsetup')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEcog') 
+    threads:
+      Cfg['sbx_WGS']['cog_threads']
+    params:
+      contigs_db = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'),
+      cog_fp = get_cog_fp
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-run-ncbi-cogs --contigs-db {params.contigs_db} \
+        --num-threads {threads} --search-with blastp {params.cog_fp} && \
+      touch {output}
+      """
+
+def get_external_genome_path(contig_db_list, output_fp):
+    with open(output_fp, 'w') as f:
+        f.write('name\tcontigs_db_path\n')
+        for db in contig_db_list:
+            name = re.sub('.*./', '', db)
+            name = re.sub('_contigs.db', '', name)
+            name = re.sub('-|\.', '_', name)
+            f.write(name + '\t' + db + '\n')
+
+rule external_genome_path:
+    input:
+      expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEcog'), sample=Samples.keys())
+    output:
+      str(ASSEMBLY_FP/'anvio'/'external_genome_path.tsv')
+    params:
+      expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'), sample=Samples.keys())
+    run:
+      get_external_genome_path(params[0], output[0])
+
+rule build_genome_storage:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'external_genome_path.tsv')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'GENOMES.db')
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-gen-genomes-storage \
+        --external-genomes {input} \
+        --output-file {output}
+      """
+
+rule scg_setup:
+    input:
+      expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEcog'), sample=Samples.keys())
+    output:
+      str(ASSEMBLY_FP/'anvio'/'.DONEscgsetup')
+    threads:
+      Cfg['sbx_WGS']['cog_threads']
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-setup-scg-databases \
+        --redo-databases \
+        --num-threads {threads} && \
+      touch {output}
+      """
+
+rule anvi_scg_annotate:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'.DONEscgsetup')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEscg')
+    threads:
+      Cfg['sbx_WGS']['threads']
+    params:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-run-scg-taxonomy \
+        -c {params} \
+        --num-parallel-processes {threads} \
+        --num-threads 4 && \
+      touch {output}
+      """
+
+def is_meta(wildcards):
+  if Cfg['sbx_WGS']['metagenome']:
+    return "--metagenome-mode"
+  else:
+    return ""
+
+rule anvi_classify:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEscg')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_taxon_classify.tsv')
+    params:
+      db = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'),
+      meta = is_meta
+    threads:
+      Cfg['sbx_WGS']['cog_threads']
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+        anvi-estimate-scg-taxonomy \
+          -c {params.db} \
+          -o {output} \
+          --just-do-it \
+          --num-threads {threads} {params.meta}
+      """
+
+rule anvio_summarize_classify:
+    input:
+      classify = expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_taxon_classify.tsv'), sample=Samples.keys())
+    output:
+      classify = str(ASSEMBLY_FP/'anvio'/'all_anvio_classify.tsv')
+    shell:
+      """
+      (head -n 1 {input.classify[0]}; tail -q -n +2 {input.classify}) > {output.classify}
+      """
+
+rule anvi_gen_stats:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEscg')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.hits')
+    params:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-script-gen_stats_for_single_copy_genes.py {params}
+      """
+
+rule add_names:
+    input:
+        str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.hits')
+    params:
+        genes = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.genes'),
+        contigs = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_simplify_names.txt'),
+        sample = '{sample}'
+    output:
+        hits_name = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.hits_named'),
+        genes_name = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.genes_named'),
+        contigs_name = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_simplify_names.txt_named')
+    shell:
+        """
+        (head -n 1 {input} | awk '{{print "sample\t"$0}}'; tail -q -n +2 {input} | awk '{{print "{params.sample}\t"$0}}') > {output.hits_name} && \
+        (head -n 1 {params.genes} | awk '{{print "sample\t"$0}}'; tail -q -n +2 {params.genes} | awk '{{print "{params.sample}\t"$0}}') > {output.genes_name} && \
+        (cat {params.contigs} | awk '{{print "{params.sample}\t"$0}}') > {output.contigs_name}
+        """
+
+rule anvio_summarize_hits:
+    input:
+        hits_name = expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.hits_named'), sample=Samples.keys())
+    output:
+        hits = str(ASSEMBLY_FP/'anvio'/'all_anvio_hits.tsv')
+    shell:
+        """
+        (head -n 1 {input.hits_name[0]}; tail -q -n +2 {input.hits_name}) > {output.hits}
+        """
+
+rule anvio_summarize_genes:
+    input:
+        genes_name = expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.genes_named'), sample=Samples.keys())
+    output:
+        genes = str(ASSEMBLY_FP/'anvio'/'all_anvio_genes.tsv')
+    shell:
+        """
+        (head -n 1 {input.genes_name[0]}; tail -q -n +2 {input.genes_name}) > {output.genes}
+        """
+
+rule anvio_summarize_contigs_names:
+    input:
+        contigs_name = expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_simplify_names.txt_named'), sample=Samples.keys())
+    output:
+        contigs = str(ASSEMBLY_FP/'anvio'/'all_anvio_contigs_map.tsv')
+    shell:
+        """
+        (cat {input.contigs_name}) > {output.contigs}
+        """
+
+rule anvi_completeness:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db.hits')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_completeness.tsv')
+    params:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
+    threads:
+      Cfg['sbx_WGS']['cog_threads']
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-estimate-genome-completeness \
+        -c {params} \
+        -o {output}
+      """
+
+rule anvio_summarize_complete:
+    input:
+      complete = expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_completeness.tsv'), sample=Samples.keys())
+    output:
+      complete = str(ASSEMBLY_FP/'anvio'/'all_anvio_completeness.tsv')
+    shell:
+      """
+      (head -n 1 {input.complete[0]}; tail -q -n +2 {input.complete}) > {output.complete}
+      """
+
+rule concat_scgs:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'external_genome_path.tsv')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'concat_scgs.fa')
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-get-sequences-for-hmm-hits \
+        --external-genomes {input} \
+        -o {output} \
+        --hmm-source Bacteria_71 \
+        --return-best-hit \
+        --get-aa-sequences \
+        --concatenate
+      """
+
+rule gen_phylogenome_tree:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'concat_scgs.fa')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt')
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-gen-phylogenomic-tree \
+        -f {input} \
+        -o {output} 
+      """
+
+def replace_dots(wildcards):
+    str_replace = wildcards.sample
+    ret_replace = re.sub("\.", "_", str_replace)
+    return ret_replace
+
+rule get_profile:
+    input:
+      str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam.bai')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'profiles'/'{sample}'/'PROFILE.db')
+    params:
+      bam_file = str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam'),
+      contigs = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'),
+      outdir = str(ASSEMBLY_FP/'anvio'/'profiles'/'{sample}'),
+      samp_name = replace_dots
+    threads:
+      Cfg['sbx_WGS']['threads']
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+        anvi-profile \
+        -i {params.bam_file} \
+        -c {params.contigs} \
+        --min-contig-length 1000 \
+        -T {threads} \
+        -S {params.samp_name} \
+        --cluster-contigs \
+        -o {params.outdir} \
+        -W
+      """
+
+#get individual SCCG
+rule sample_SCCG:
+    input:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
+    output:
+      str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_SCCG_sequence.fa')
+    conda:
+      "sbx_SCCG_conda_env.yml"
+    shell:
+      """
+      anvi-get-sequences-for-hmm-hits \
+          -c {input} \
+          -o {output} \
+          --hmm-source Bacteria_71 \
+          --return-best-hit \
+          --no-wrap
+      """
+
+def get_external_genome_path_no_change(contig_db_list, output_fp):
+    with open(output_fp, 'w') as f:
+        f.write('name\tcontigs_db_path\n')
+        for db in contig_db_list:
+            name = re.sub('.*./', '', db)
+            name = re.sub('_contigs.db', '', name)
+            f.write(name + '\t' + db + '\n')
+
+rule external_genome_path_no_name_change:
+    input:
+      expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'.DONEcog'), sample=Samples.keys())
+    output:
+      str(ASSEMBLY_FP/'anvio'/'external_genome_path_no_name_change.tsv')
+    params:
+      expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'), sample=Samples.keys())
+    run:
+      get_external_genome_path_no_change(params[0], output[0])
+
+rule all_SCCG:
+    input:
+        str(ASSEMBLY_FP/'anvio'/'external_genome_path_no_name_change.tsv')
+    output:
+        str(ASSEMBLY_FP/'anvio'/'all_SCCG_sequence.fa')
+    conda:
+        "sbx_SCCG_conda_env.yml"
+    shell:
+        """
+        anvi-get-sequences-for-hmm-hits \
+            -e {input} \
+            -o {output} \
+            --hmm-source Bacteria_71 \
+            --return-best-hit \
+            --no-wrap
+        """
+
+def create_dict(fasta):
+    gene_names_dict = {}
+    seq_dict = {}
+    for keys in fasta:
+      gene = keys.split("___")[0]
+      length = keys.split("length:")[1].rstrip()
+      gene_samp = keys.split("bin_id:")[1]
+      gene_samp = gene_samp.split("|")[0]
+      gene_samp = gene_samp.split("_contigs")[0]
+      gene_samp = gene + ", " + gene_samp + "__" + length
+      gene_names_dict[gene_samp] = gene
+      seq_dict[gene_samp] = str(fasta[keys])
+    return gene_names_dict, seq_dict
+
+def format_mismatch(align1, align2, score, begin, end):
+    mismatch=0
+    for a, b in zip(align1[begin:end], align2[begin:end]):
+        if a != b and not (a == "-" or b == "-"):
+            mismatch+=1
+    return mismatch
+
+rule get_sample_mismatches:
+    input:
+        all = str(ASSEMBLY_FP/'anvio'/'all_SCCG_sequence.fa'),
+        sample = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_SCCG_sequence.fa')
+    output:
+        str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_SCCG_mismatches.tsv')
+    threads:
+        Cfg['sbx_WGS']['threads']
+    run:
+        all_fasta_sequences = {fa.description: fa.seq for fa in SeqIO.parse(input.all, 'fasta')}
+        query_fasta_sequences = {fa.description: fa.seq for fa in SeqIO.parse(input.sample, 'fasta')}
+        all_genes, all_seqs = create_dict(all_fasta_sequences)
+        query_genes, query_seqs = create_dict(query_fasta_sequences)
+        with open(output[0], 'w') as out:
+            out.write('query\tsubject\tmismatches\n')
+            for keys in query_genes:
+                query_seq = query_seqs[keys]
+                subj_names = [names for names,gene_name in all_genes.items() if gene_name == query_genes[keys]]
+                for subj in subj_names:
+                    subj_seq = all_seqs[subj]
+                    mismatches = format_mismatch(*pairwise2.align.globalms(query_seq, subj_seq, 5, -4, -10, -4, penalize_extend_when_opening=True, penalize_end_gaps=False, one_alignment_only=True)[0])
+                    out.write(keys + '\t' + subj + '\t' + str(mismatches) + '\n')
+
+rule summarize_mismatches:
+    input:
+        mismatches = expand(str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_SCCG_mismatches.tsv'), sample=Samples.keys())
+    output:
+        mismatches = str(ASSEMBLY_FP/'anvio'/'all_SCCG_mismatches.tsv')
+    shell:
+        """
+        (head -n 1 {input.mismatches[0]}; tail -q -n +2 {input.mismatches}) > {output.mismatches}
+        """

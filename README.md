@@ -33,5 +33,9 @@ sampling (read mapping): define minimum length of the contig to slide over
 
 metagenome: option for running this pipeline on metagenomic samples
 
+## Analysis
+
+Templates for analysis can be found in the Analysis_templates repository
+
 ## Contributors
 This extension was adapted from pipelines written by Scott Daniel, Jung-Jin Lee, Ceylan Tanes, and Louis Taylor. Spades rules were adapted from sbx_spades (https://github.com/sunbeam-labs/sbx_spades). Read mapping rules were adapted from the sunbeam pipeline (https://github.com/sunbeam-labs/sunbeam/tree/stable/rules/mapping) and sbx_mapping_withFilter (https://github.com/ctanes/sbx_mapping_withFilter). Anvio rules were adapted from anvio_pan (https://github.com/junglee0713/anvio_pan)

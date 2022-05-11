@@ -6,6 +6,5 @@ dependencies:
  - spades
  - samtools
  - checkm-genome
- - quast
  - ncbi-genome-download
  - scikit-learn=0.21.2
