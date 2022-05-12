@@ -3,12 +3,14 @@
 #SBATCH --no-requeue
 #SBATCH -n 1
 #SBATCH --export=ALL
-#SBATCH --mem=2G
+#SBATCH --mem=32G
 #SBATCH --output=slurm_%x_%j.out
 #SBATCH -t 10-0
 
 source ~/.bashrc.conda #needed to make "conda" command to work
 conda activate sunbeam #needed for sunbeam
+
+module load BioPerl
 
 unset LD_LIBRARY_PATH #sunbeam / snakemake clears this path when it launched due to secrutiy issues
 
