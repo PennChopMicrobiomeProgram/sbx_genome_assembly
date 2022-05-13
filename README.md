@@ -37,5 +37,10 @@ metagenome: option for running this pipeline on metagenomic samples
 
 Templates for analysis can be found in the Analysis_templates repository
 
+## Issues with pipeline
+2022-05-13:
+rule concat_scgs that uses the `anvi-get-sequences-for-hmm-hits` command no longer works with MUSCLE version 5.1. This command still works with MUSCLE version 3.8
+rule scg_setup which uses `anvi-setup-scg-databases` fails to download the require database. This may be due to GTDB updating its database on April 2022 and changing its path to the db
+
 ## Contributors
 This extension was adapted from pipelines written by Scott Daniel, Jung-Jin Lee, Ceylan Tanes, and Louis Taylor. Spades rules were adapted from sbx_spades (https://github.com/sunbeam-labs/sbx_spades). Read mapping rules were adapted from the sunbeam pipeline (https://github.com/sunbeam-labs/sunbeam/tree/stable/rules/mapping) and sbx_mapping_withFilter (https://github.com/ctanes/sbx_mapping_withFilter). Anvio rules were adapted from anvio_pan (https://github.com/junglee0713/anvio_pan)
