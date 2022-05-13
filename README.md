@@ -39,7 +39,9 @@ Templates for analysis can be found in the Analysis_templates repository
 
 ## Issues with pipeline
 2022-05-13:
+
 rule concat_scgs that uses the `anvi-get-sequences-for-hmm-hits` command no longer works with MUSCLE version 5.1. This command still works with MUSCLE version 3.8
+
 rule scg_setup which uses `anvi-setup-scg-databases` fails to download the require database. This may be due to GTDB updating its database on April 2022 and changing its path to the db
 
 ## Contributors
