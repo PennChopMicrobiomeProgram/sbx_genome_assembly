@@ -186,7 +186,6 @@ rule scg_setup:
     shell:
       """
       anvi-setup-scg-databases \
-        --redo-databases \
         --num-threads {threads} && \
       touch {output}
       """
