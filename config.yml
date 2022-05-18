@@ -1,6 +1,6 @@
 sbx_WGS:
   threads: 4
-  cog_db: /scr1/users/tuv/db/COG #path of previous downloaded COG db
+  cog_db: /scr1/users/tuv/db/COG #path of downloaded COG db, leave blank for new download
   cog_threads: 4
   metagenome: FALSE
   checkm_yml: /scr1/users/tuv/SPARCQ_test/CheckM.yml

@@ -11,22 +11,22 @@ import yaml
 
 rule all_WGS:
     input:
-      [expand([str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam.bai'),
-               str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn'),
-               str(ASSEMBLY_FP/'anvio'/'profiles'/'{sample}'/'PROFILE.db')
+      [expand([str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam.bai'), # indexed alignment files for read mapping: remove 
+               str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn'), # annotated ORFs from assembled genomes: keep
+               str(ASSEMBLY_FP/'anvio'/'profiles'/'{sample}'/'PROFILE.db') # anvio profiles for pangenome analysis: remove
               ],sample=Samples.keys()),
-      str(ASSEMBLY_FP/'checkm_output'/'all_extended_summary.tsv'),
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_contigs_map.tsv'),
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_hits.tsv'),
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_genes.tsv'),
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_completeness.tsv'),
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_classify.tsv'),
-      str(ASSEMBLY_FP/'read_mapping'/'all_coverage.csv'),
-      str(ASSEMBLY_FP/'read_mapping'/'all_numReads.csv'),
-      str(ASSEMBLY_FP/'read_mapping'/'all_sliding_coverage.csv'),
-      str(ASSEMBLY_FP/'anvio'/'GENOMES.db'),
-      str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt'),
-      str(ASSEMBLY_FP/'anvio'/'all_SCCG_mismatches.tsv')
+      str(ASSEMBLY_FP/'checkm_output'/'all_extended_summary.tsv'), # genome quality summary from checkm: keep
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_contigs_map.tsv'), # anvio mapping file for renamed contigs: remove
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_hits.tsv'), # anvio hits for SCCGs identified in contigs: remove
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_genes.tsv'), # anvio hits for SCCGs identified in each sample (less details than above file): remove
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_completeness.tsv'), # anvio summary for genome completeness and redundancy: remove
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_classify.tsv'), # anvio taxonomic assignments for genomes based on SCCGs: remove
+      str(ASSEMBLY_FP/'read_mapping'/'all_coverage.csv'), # coverage statistics from sbx_mapping_withFilter: remove
+      str(ASSEMBLY_FP/'read_mapping'/'all_numReads.csv'), # number of reads mapped to contigs from sbx_mapping_withFilter: remove
+      str(ASSEMBLY_FP/'read_mapping'/'all_sliding_coverage.csv'), # sliding coverage from sbx_mapping_withFilter: remove
+      str(ASSEMBLY_FP/'anvio'/'GENOMES.db'), # anvio profile for pangenome analysis: remove
+      str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt'), # anvio output for phylogenomic tree based off of concated SCCGs: remove and write new rule to concat SCCGs and make tree
+      str(ASSEMBLY_FP/'anvio'/'all_SCCG_mismatches.tsv') # number of mismatches in SCCGs between samples: keep but modify SCCG rule to use HMMER instead of anvio
       ]
 
 def get_input(wildcards):
