@@ -18,7 +18,7 @@ rule all_WGS:
       str(ASSEMBLY_FP/'checkm_output'/'all_extended_summary.tsv'), # genome quality summary from checkm: keep
       str(ASSEMBLY_FP/'anvio'/'all_anvio_contigs_map.tsv'), # anvio mapping file for renamed contigs: remove
       str(ASSEMBLY_FP/'anvio'/'all_anvio_hits.tsv'), # anvio hits for SCCGs identified in contigs: remove
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_genes.tsv'), # anvio hits for SCCGs identified in each sample (less details than above file): remove
+      str(ASSEMBLY_FP/'anvio'/'all_anvio_genes.tsv'), # anvio list of all SCCGs in their database (Bacteria, Archaea, and Protists). Each set is repeated for a sample: remove
       str(ASSEMBLY_FP/'anvio'/'all_anvio_completeness.tsv'), # anvio summary for genome completeness and redundancy: remove
       str(ASSEMBLY_FP/'anvio'/'all_anvio_classify.tsv'), # anvio taxonomic assignments for genomes based on SCCGs: remove
       str(ASSEMBLY_FP/'read_mapping'/'all_coverage.csv'), # coverage statistics from sbx_mapping_withFilter: remove
