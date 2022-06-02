@@ -22,6 +22,8 @@ rule run_spades_paired:
        outdir = str(ASSEMBLY_FP/'spades'/'{sample}'),
        mk_dir = str(ASSEMBLY_FP/'spades_bins'/'{sample}'),
        copy_from = str(ASSEMBLY_FP/'spades'/'{sample}'/'contigs.fasta')
+    conda:
+        "sbx_WGS_env.yml"
     shell:
        """
        spades.py -1 {input.r1} -2 {input.r2} -o {params.outdir} -t {threads} --cov-cutoff 5.0 && \
@@ -40,6 +42,8 @@ rule run_spades_unpaired:
        outdir = str(ASSEMBLY_FP/'spades'/'{sample}'),
        mk_dir = str(ASSEMBLY_FP/'spades_bins'/'sample'),
        copy_from = str(ASSEMBLY_FP/'spades'/'{sample}'/'contigs.fasta')
+    conda:
+        "sbx_WGS_env.yml"
     shell:
        """
        spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 && \
@@ -63,20 +67,14 @@ rule checkm_tree:
        Cfg['sbx_WGS']['threads']
     params:
        bins = str(ASSEMBLY_FP/'spades_bins'/'{sample}'),
-       tree_output = str(ASSEMBLY_FP/'checkm_output'/'tree_output'/'{sample}')
-    run:
-       if checkm_yml and wildcards.sample in taxon_yml:
-          taxon = str(taxon_yml[wildcards.sample])
-          rank = str(rank_yml[wildcards.sample])
-          shell("""
-          checkm taxonomy_wf -t {threads} {rank} '{taxon}' {params.bins} {params.tree_output} && \
-          touch {output}
-          """)
-       else:
-          shell("""
-          checkm lineage_wf -t {threads} {params.bins} {params.tree_output} && \
-          touch {output}
-          """)
+       tree_output = str(ASSEMBLY_FP/'checkm_output'/'tree_output'/'{sample}'),
+       checkm_yml = checkm_yml,
+       rank_yml = rank_yml if 'rank_yml' in locals() else None,
+       taxon_yml = taxon_yml if 'taxon_yml' in locals() else None
+    conda:
+        "sbx_WGS_env.yml"
+    script:
+        "scripts/checkm_tree.py"
 
 rule checkm_summary:
     input:
@@ -84,17 +82,13 @@ rule checkm_summary:
     output:
        str(ASSEMBLY_FP/'checkm_output'/'summary'/'{sample}'/'extended_summary.tsv')
     params:
-       tree_output = str(ASSEMBLY_FP/'checkm_output'/'tree_output'/'{sample}')
-    run:
-       if checkm_yml and wildcards.sample in taxon_yml:
-          taxon = str(taxon_yml[wildcards.sample])
-          shell("""
-          checkm qa --out_format 2 --tab_table --file {output} "{params.tree_output}/{taxon}.ms" {params.tree_output}
-          """)
-       else:
-          shell("""
-          checkm qa --out_format 2 --tab_table --file {output} "{params.tree_output}/lineage.ms" {params.tree_output}
-          """)
+       tree_output = str(ASSEMBLY_FP/'checkm_output'/'tree_output'/'{sample}'),
+       checkm_yml = checkm_yml,
+       taxon_yml = taxon_yml if 'taxon_yml' in locals() else None
+    conda:
+        "sbx_WGS_env.yml"
+    script:
+        "scripts/checkm_summary.py"
    
 def _checkm_summary_tsvs(w):
     pattern = str(ASSEMBLY_FP/'checkm_output'/'summary'/'{sample}'/'extended_summary.tsv')
@@ -116,6 +110,8 @@ rule index_assembled_genomes:
     params:
         bwa_dir = str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'),
         bwa_sample = str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}_reformatted_contigs.fa')
+    conda:
+        "sbx_WGS_env.yml"
     shell:
         "mkdir -p {params.bwa_dir} && \
          cp {input} {params.bwa_dir} && \
@@ -134,6 +130,8 @@ rule align_2_genome:
         Cfg['sbx_WGS']['threads']
     params:
         str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}_reformatted_contigs.fa')
+    conda:
+        "sbx_WGS_env.yml"
     shell:
         """
         bwa mem -M -t {threads} \
@@ -148,6 +146,8 @@ rule assembly_samtools_convert:
         str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam')
     threads:
         Cfg['sbx_WGS']['threads']
+    conda:
+        "sbx_WGS_env.yml"
     shell:
         """
         samtools view -@ {threads} -b {input} | \
@@ -157,6 +157,7 @@ rule assembly_samtools_convert:
 rule index_samtools:
     input: str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam')
     output: str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam.bai')
+    conda: "sbx_WGS_env.yml"
     shell: "samtools index {input} {output}"
 
 rule samtools_get_coverage_filtered:
@@ -164,9 +165,10 @@ rule samtools_get_coverage_filtered:
         str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam')
     output:
         str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'genome_coverage_{sample}.csv')
-    run:
-        samtools.get_coverage_stats(
-            wildcards.sample, input[0], wildcards.sample, output[0])
+    conda:
+        "sbx_WGS_env.yml"
+    script:
+        "scripts/samtools_get_coverage_filtered.py"
 
 def _sorted_csvs(w):
     pattern = str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'genome_coverage_{sample}.csv')
@@ -184,6 +186,8 @@ rule samtools_summarize_num_mapped_reads:
         str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam')
     output:
         str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'numReads_{sample}.csv')
+    conda:
+        "sbx_WGS_env.yml"
     shell:
         """
         samtools idxstats {input} | (sed 's/^/{wildcards.sample}\t/') > {output}
@@ -238,9 +242,12 @@ rule samtools_get_sliding_coverage:
         str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'sliding_coverage_{sample}.csv')
     params:
         window_size = Cfg['sbx_WGS']['window_size'],
-        sampling = Cfg['sbx_WGS']['sampling']
-    run:
-        sliding_window_coverage(wildcards.sample, input[0], wildcards.sample, output[0], params.window_size, params.sampling)
+        sampling = Cfg['sbx_WGS']['sampling'],
+        sliding_window_coverage = sliding_window_coverage
+    conda:
+        "sbx_WGS_env.yml"
+    script:
+        "scripts/samtools_get_sliding_coverage.py"
 
 def _sliding_coverage_csvs(w):
     pattern = str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'sliding_coverage_{sample}.csv')
