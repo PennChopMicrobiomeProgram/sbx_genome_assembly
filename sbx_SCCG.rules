@@ -29,25 +29,17 @@ rule reformat_fasta:
     input: 
         get_input
     output:
-        str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
+        str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_reformatted_contigs.fa')
     params:
-        simple_names_file = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_simplify_names.txt')
-    conda:
-       "sbx_SCCG_env.yml"
-    shell:
-        """
-        anvi-script-reformat-fasta {input} \
-          --output-file {output} \
-          --min-len 200 \
-          --simplify-name \
-          --report-file {params.simple_names_file}
-        """
+        len = 200
+    script:
+        "scripts/reformat_fasta.py"
 
 rule prokka:
     input:
-       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
+       str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_reformatted_contigs.fa')
     output:
-       str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn')
+       str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.faa')
     params:
        outdir = str(ANNOTATION_FP/'prokka'/'{sample}')
     conda:
@@ -75,18 +67,26 @@ rule hmmpress:
 
 rule hmmscan:
     input:
-        expand(str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn'), sample=Samples.keys()),
-        expand(os.path.join(get_WGS_path(), 'genes.hmm.h3{suffix}'), suffix={'f', 'i', 'm', 'p'})
+        faa = str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.faa'),
+        aux = expand(os.path.join(get_WGS_path(), 'genes.hmm.h3{suffix}'), suffix={'f', 'i', 'm', 'p'})
     output:
-        str(ASSEMBLY_FP/'hmmer'/'all_SCCG_mismatches.tsv')
+        str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_mismatches.tsv')
     log:
-        "logs/hmmscan.log"
+        "logs/{sample}_hmmscan.log"
     params:
-        hmm = os.path.join(get_WGS_path(), 'genes.hmm')
+        hmm = os.path.join(get_WGS_path(), "genes.hmm")
     conda:
         "sbx_SCCG_env.yml"
     shell:
-        "hmmscan -o {log} --tblout {output} {params.hmm} {input}"
+        "hmmscan -o {log} --tblout {output} {params.hmm} {input.faa}"
+
+rule summarize_hmmscan:
+    input:
+        expand(str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_mismatches.tsv'), sample=Samples.keys())
+    output:
+        str(ASSEMBLY_FP/'hmmer'/'all_SCCG_mismatches.tsv')
+    shell:
+        "cat {input} > {output}"
 
 rule get_contig_db:
     input:

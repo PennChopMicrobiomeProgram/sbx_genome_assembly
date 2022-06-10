@@ -1,12 +1,7 @@
 channels:
- - conda-forge
  - bioconda
 dependencies:
- - prokka<=1.14.6
- - anvio=6.2
- - diamond=0.9.14
- - fasttree<=2.1.10
- - scikit-learn=0.21.2
- - django=3.2
- - asgiref<=3.3.4
+ - prokka
+ - blast=2.2
+ - diamond
  - hmmer
