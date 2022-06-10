@@ -50,5 +50,5 @@ jobs:
 
       - name: Run Tests
         run: |
-          source activate sunbeam
+          source activate sunbeam3
           pytest .tests/
