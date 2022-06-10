@@ -131,6 +131,4 @@ Mixed,{r1r1},{r1r2}\n
         # Check output
         self.assertTrue(os.path.exists(self.all_SCCG_fp))
         with open(self.all_SCCG_fp) as f:
-            self.assertEqual(next(f), "\tTEST0\tTEST1\tTEST2\tTEST3\tTEST4\n")
-            for val in next(f).split("\t")[1:]:
-                self.assertEqual(round(float(val)), 3)
+            self.assertGreater(len(f.readlines()), 140) # Found at least 70 SCCGs in each
