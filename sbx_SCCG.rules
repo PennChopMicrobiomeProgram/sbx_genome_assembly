@@ -70,7 +70,7 @@ rule hmmscan:
         faa = str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.faa'),
         aux = expand(os.path.join(get_WGS_path(), 'genes.hmm.h3{suffix}'), suffix={'f', 'i', 'm', 'p'})
     output:
-        str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_mismatches.tsv')
+        str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_hits.tsv')
     log:
         "logs/{sample}_hmmscan.log"
     params:
@@ -82,9 +82,9 @@ rule hmmscan:
 
 rule summarize_hmmscan:
     input:
-        expand(str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_mismatches.tsv'), sample=Samples.keys())
+        expand(str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_hits.tsv'), sample=Samples.keys())
     output:
-        str(ASSEMBLY_FP/'hmmer'/'all_SCCG_mismatches.tsv')
+        str(ASSEMBLY_FP/'hmmer'/'all_SCCG_hits.tsv')
     shell:
         "cat {input} > {output}"
 
