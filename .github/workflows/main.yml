@@ -43,7 +43,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install -U pytest
-          git clone -b stable https://github.com/eclarke/sunbeam sunbeam-stable
+          git clone -b stable https://github.com/sunbeam-labs/sunbeam sunbeam-stable
           cd sunbeam-stable
           bash install.sh
           git clone https://https://github.com/PennChopMicrobiomeProgram/sbx_WGS extensions/sbx_WGS
