@@ -47,7 +47,7 @@ Mixed,{r1r1},{r1r2}\n
               samplelist_fp: samples.csv\n
               paired_end: true\n
               download_reads: false\n
-              version: 2.1.1+dev0.g43432e1.d20220208\n
+              version: 3.0.0\n
             qc:\n
               suffix: qc\n
               seq_id_ending: ''\n
