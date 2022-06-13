@@ -26,88 +26,21 @@ class FullRunTests(unittest.TestCase):
 
         self.data_fp = os.path.join(self.temp_dir, "data/")
         shutil.copytree("test_samples/", self.data_fp)
+        os.remove(os.path.join(self.data_fp, "commands2generateReads.txt"))
 
-        self.samples_fp = os.path.join(self.temp_dir, "samples.csv")
-        self.samples_content = """
-ASM2732v1,{r0r1},{r0r2}\n
-Mixed,{r1r1},{r1r2}\n
-""".format(
-                r0r1 = os.path.join(self.data_fp, "ASM2732v1_fixed_R1.fastq.gz"),
-                r0r2 = os.path.join(self.data_fp, "ASM2732v1_fixed_R2.fastq.gz"),
-                r1r1 = os.path.join(self.data_fp, "Mixed_fixed_R1.fastq.gz"),
-                r1r2 = os.path.join(self.data_fp, "Mixed_fixed_R2.fastq.gz"))
-        with open(self.samples_fp, "w") as f:
-            f.write(self.samples_content)
+        self.project_dir = os.path.join(self.temp_dir, "project/")
+
+        sp.check_output([
+            "sunbeam",
+            "init",
+            "--data_fp",
+            self.data_fp,
+            self.project_dir
+        ])
         
-        self.config_fp = os.path.join(self.temp_dir, "sunbeam_config.yml")
-        self.config_content = """
-            all:\n
-              root: {root}\n
-              output_fp: sunbeam_output\n
-              samplelist_fp: samples.csv\n
-              paired_end: true\n
-              download_reads: false\n
-              version: 3.0.0\n
-            qc:\n
-              suffix: qc\n
-              seq_id_ending: ''\n
-              threads: 4\n
-              java_heapsize: 512M\n
-              leading: 3\n
-              trailing: 3\n
-              slidingwindow: [4, 15]\n
-              minlen: 36\n
-              adapter_fp: {adapt}\n
-              adapter_template: $CONDA_PREFIX/share/trimmomatic/adapters/NexteraPE-PE.fa\n
-              fwd_adapters: [GTTTCCCAGTCACGATC, GTTTCCCAGTCACGATCNNNNNNNNNGTTTCCCAGTCACGATC]\n
-              rev_adapters: [GTTTCCCAGTCACGATC, GTTTCCCAGTCACGATCNNNNNNNNNGTTTCCCAGTCACGATC]\n
-              kz_threshold: 0.55\n
-              pct_id: 0.5\n
-              frac: 0.6\n
-              host_fp: ''\n
-            classify:\n
-              suffix: classify\n
-              threads: 4\n
-              kraken_db_fp: ''\n
-            assembly:\n
-              suffix: assembly\n
-              min_length: 300\n
-              threads: 4\n
-            annotation:\n
-              suffix: annotation\n
-              min_contig_len: 500\n
-              circular_kmin: 10\n
-              circular_kmax: 1000\n
-              circular_min_len: 3500\n
-            blast:\n
-              threads: 4\n
-            blastdbs:\n
-              root_fp: ''\n
-            mapping:\n
-              suffix: mapping\n
-              genomes_fp: ''\n
-              samtools_opts: ''\n
-              threads: 4\n
-            download:\n
-              suffix: download\n
-              threads: 4\n
-              sbx_coassembly: ''\n
-              threads: 4\n
-              group_file: ''\n
-            sbx_WGS:\n
-              threads: 4\n
-              cog_db:\n
-              cog_threads: 4\n
-              metagenome: false\n
-              checkm_yml:\n
-              window_size: 5000\n
-              sampling: 5000\n
-            """.format(root = os.path.join(self.temp_dir),
-                adapt = os.path.join(find_conda(), "envs/sunbeam/share/trimmomatic/adapters/NexteraPE-PE.fa"))
-        with open(self.config_fp, "w") as f:
-            f.write(self.config_content)
+        self.config_fp = os.path.join(self.project_dir, "sunbeam_config.yml")
 
-        self.output_fp = os.path.join(self.temp_dir, "sunbeam_output")
+        self.output_fp = os.path.join(self.project_dir, "sunbeam_output")
 
         self.all_SCCG_fp = os.path.join(self.output_fp, "assembly/hmmer/all_SCCG_hits.tsv")
     
