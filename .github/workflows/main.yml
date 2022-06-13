@@ -42,12 +42,13 @@ jobs:
 
       - name: Extract branch name
         shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_HEAD_REF#refs/heads/})"
         id: extract_branch
       
       - name: Install Dependencies
         env:
-          BRANCH_NAME: ${{ steps.extract_branch.outputs.branch }}
+          #BRANCH_NAME: ${{ steps.extract_branch.outputs.branch }}
+          BRANCH_NAME: ${{ github.head_ref }}
         run: |
           python -m pip install -U pytest
           git clone https://github.com/sunbeam-labs/sunbeam sunbeam
