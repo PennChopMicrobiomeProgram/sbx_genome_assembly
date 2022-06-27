@@ -8,25 +8,15 @@ import glob
 import pysam
 import re
 import yaml
+import os
+import sys
 
 rule all_WGS:
     input:
-      [expand([str(ASSEMBLY_FP/'read_mapping'/'{sample}'/'bwa'/'{sample}.bam.bai'), # indexed alignment files for read mapping: remove 
-               str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn'), # annotated ORFs from assembled genomes: keep
-               str(ASSEMBLY_FP/'anvio'/'profiles'/'{sample}'/'PROFILE.db') # anvio profiles for pangenome analysis: remove
-              ],sample=Samples.keys()),
-      str(ASSEMBLY_FP/'checkm_output'/'all_extended_summary.tsv'), # genome quality summary from checkm: keep
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_contigs_map.tsv'), # anvio mapping file for renamed contigs: remove
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_hits.tsv'), # anvio hits for SCCGs identified in contigs: remove
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_genes.tsv'), # anvio list of all SCCGs in their database (Bacteria, Archaea, and Protists). Each set is repeated for a sample: remove
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_completeness.tsv'), # anvio summary for genome completeness and redundancy: remove
-      str(ASSEMBLY_FP/'anvio'/'all_anvio_classify.tsv'), # anvio taxonomic assignments for genomes based on SCCGs: remove
-      str(ASSEMBLY_FP/'read_mapping'/'all_coverage.csv'), # coverage statistics from sbx_mapping_withFilter: remove
-      str(ASSEMBLY_FP/'read_mapping'/'all_numReads.csv'), # number of reads mapped to contigs from sbx_mapping_withFilter: remove
-      str(ASSEMBLY_FP/'read_mapping'/'all_sliding_coverage.csv'), # sliding coverage from sbx_mapping_withFilter: remove
-      str(ASSEMBLY_FP/'anvio'/'GENOMES.db'), # anvio profile for pangenome analysis: remove
-      str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt'), # anvio output for phylogenomic tree based off of concated SCCGs: remove and write new rule to concat SCCGs and make tree
-      str(ASSEMBLY_FP/'anvio'/'all_SCCG_mismatches.tsv') # number of mismatches in SCCGs between samples: keep but modify SCCG rule to use HMMER instead of anvio
+      [expand(str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn'), sample=Samples.keys()), # annotated ORFs from assembled genomes
+      str(ASSEMBLY_FP/'checkm_output'/'all_extended_summary.tsv'), # genome quality summary from checkm
+      #str(ASSEMBLY_FP/'anvio'/'all_SCCG_mismatches.tsv'), # number of mismatches in SCCGs between samples: keep but modify SCCG rule to use HMMER instead of anvio
+      str(ASSEMBLY_FP/'hmmer'/'all_SCCG_mismatches.tsv') # number of mismatches in SCCGs between samples
       ]
 
 def get_input(wildcards):
@@ -39,33 +29,64 @@ rule reformat_fasta:
     input: 
         get_input
     output:
-        str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
+        str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_reformatted_contigs.fa')
     params:
-        simple_names_file = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_simplify_names.txt')
-    conda:
-       "sbx_SCCG_conda_env.yml"
-    shell:
-        """
-        anvi-script-reformat-fasta {input} \
-          --output-file {output} \
-          --min-len 200 \
-          --simplify-name \
-          --report-file {params.simple_names_file}
-        """
+        len = 200
+    script:
+        "scripts/reformat_fasta.py"
 
 rule prokka:
     input:
-       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_reformatted_contigs.fa')
+       str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_reformatted_contigs.fa')
     output:
-       str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn')
+       str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.faa')
     params:
        outdir = str(ANNOTATION_FP/'prokka'/'{sample}')
     conda:
-       "sbx_SCCG_conda_env.yml"
+       "sbx_SCCG_env.yml"
     shell:
        """
        prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 
        """
+
+def get_WGS_path() -> str:
+    for fp in sys.path:
+        if fp.split("/")[-1] == "sbx_WGS":
+            return fp
+    raise Error("Filepath for WGS not found, are you sure it's installed under extensions/sbx_WGS?")
+
+rule hmmpress:
+    input:
+        os.path.join(get_WGS_path(), 'genes.hmm')
+    output:
+        expand(os.path.join(get_WGS_path(), 'genes.hmm.h3{suffix}'), suffix={'f', 'i', 'm', 'p'})
+    conda:
+        "sbx_SCCG_env.yml"
+    shell:
+        "hmmpress {input}"
+
+rule hmmscan:
+    input:
+        faa = str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.faa'),
+        aux = expand(os.path.join(get_WGS_path(), 'genes.hmm.h3{suffix}'), suffix={'f', 'i', 'm', 'p'})
+    output:
+        str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_hits.tsv')
+    log:
+        "logs/{sample}_hmmscan.log"
+    params:
+        hmm = os.path.join(get_WGS_path(), "genes.hmm")
+    conda:
+        "sbx_SCCG_env.yml"
+    shell:
+        "hmmscan -o {log} --tblout {output} {params.hmm} {input.faa}"
+
+rule summarize_hmmscan:
+    input:
+        expand(str(ASSEMBLY_FP/'hmmer'/'{sample}'/'{sample}_SCCG_hits.tsv'), sample=Samples.keys())
+    output:
+        str(ASSEMBLY_FP/'hmmer'/'all_SCCG_hits.tsv')
+    shell:
+        "cat {input} > {output}"
 
 rule get_contig_db:
     input:
@@ -78,7 +99,7 @@ rule get_contig_db:
     params:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-gen-contigs-database --contigs-fasta {input} \
@@ -109,7 +130,7 @@ rule cog_setup:
     params:
       anvi_setup
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       {params} && \
@@ -133,7 +154,7 @@ rule ncbi_cogs:
       contigs_db = str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db'),
       cog_fp = get_cog_fp
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-run-ncbi-cogs --contigs-db {params.contigs_db} \
@@ -166,7 +187,7 @@ rule build_genome_storage:
     output:
       str(ASSEMBLY_FP/'anvio'/'GENOMES.db')
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-gen-genomes-storage \
@@ -182,7 +203,7 @@ rule scg_setup:
     threads:
       Cfg['sbx_WGS']['cog_threads']
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-setup-scg-databases \
@@ -200,7 +221,7 @@ rule anvi_scg_annotate:
     params:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-run-scg-taxonomy \
@@ -227,7 +248,7 @@ rule anvi_classify:
     threads:
       Cfg['sbx_WGS']['cog_threads']
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
         anvi-estimate-scg-taxonomy \
@@ -255,7 +276,7 @@ rule anvi_gen_stats:
     params:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_contigs.db')
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-script-gen_stats_for_single_copy_genes.py {params}
@@ -319,7 +340,7 @@ rule anvi_completeness:
     threads:
       Cfg['sbx_WGS']['cog_threads']
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-estimate-genome-completeness \
@@ -343,7 +364,7 @@ rule concat_scgs:
     output:
       str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'concat_scgs.fa')
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-get-sequences-for-hmm-hits \
@@ -361,7 +382,7 @@ rule gen_phylogenome_tree:
     output:
       str(ASSEMBLY_FP/'anvio'/'phylogenomics'/'phylogenomic-tree.txt')
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-gen-phylogenomic-tree \
@@ -387,7 +408,7 @@ rule get_profile:
     threads:
       Cfg['sbx_WGS']['threads']
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
         anvi-profile \
@@ -408,7 +429,7 @@ rule sample_SCCG:
     output:
       str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_SCCG_sequence.fa')
     conda:
-      "sbx_SCCG_conda_env.yml"
+      "sbx_SCCG_env.yml"
     shell:
       """
       anvi-get-sequences-for-hmm-hits \
@@ -443,7 +464,7 @@ rule all_SCCG:
     output:
         str(ASSEMBLY_FP/'anvio'/'all_SCCG_sequence.fa')
     conda:
-        "sbx_SCCG_conda_env.yml"
+        "sbx_SCCG_env.yml"
     shell:
         """
         anvi-get-sequences-for-hmm-hits \
@@ -454,27 +475,6 @@ rule all_SCCG:
             --no-wrap
         """
 
-def create_dict(fasta):
-    gene_names_dict = {}
-    seq_dict = {}
-    for keys in fasta:
-      gene = keys.split("___")[0]
-      length = keys.split("length:")[1].rstrip()
-      gene_samp = keys.split("bin_id:")[1]
-      gene_samp = gene_samp.split("|")[0]
-      gene_samp = gene_samp.split("_contigs")[0]
-      gene_samp = gene + ", " + gene_samp + "__" + length
-      gene_names_dict[gene_samp] = gene
-      seq_dict[gene_samp] = str(fasta[keys])
-    return gene_names_dict, seq_dict
-
-def format_mismatch(align1, align2, score, begin, end):
-    mismatch=0
-    for a, b in zip(align1[begin:end], align2[begin:end]):
-        if a != b and not (a == "-" or b == "-"):
-            mismatch+=1
-    return mismatch
-
 rule get_sample_mismatches:
     input:
         all = str(ASSEMBLY_FP/'anvio'/'all_SCCG_sequence.fa'),
@@ -483,20 +483,10 @@ rule get_sample_mismatches:
         str(ASSEMBLY_FP/'anvio'/'{sample}'/'{sample}_SCCG_mismatches.tsv')
     threads:
         Cfg['sbx_WGS']['threads']
-    run:
-        all_fasta_sequences = {fa.description: fa.seq for fa in SeqIO.parse(input.all, 'fasta')}
-        query_fasta_sequences = {fa.description: fa.seq for fa in SeqIO.parse(input.sample, 'fasta')}
-        all_genes, all_seqs = create_dict(all_fasta_sequences)
-        query_genes, query_seqs = create_dict(query_fasta_sequences)
-        with open(output[0], 'w') as out:
-            out.write('query\tsubject\tmismatches\n')
-            for keys in query_genes:
-                query_seq = query_seqs[keys]
-                subj_names = [names for names,gene_name in all_genes.items() if gene_name == query_genes[keys]]
-                for subj in subj_names:
-                    subj_seq = all_seqs[subj]
-                    mismatches = format_mismatch(*pairwise2.align.globalms(query_seq, subj_seq, 5, -4, -10, -4, penalize_extend_when_opening=True, penalize_end_gaps=False, one_alignment_only=True)[0])
-                    out.write(keys + '\t' + subj + '\t' + str(mismatches) + '\n')
+    conda:
+        "sbx_SCCG_env.yml"
+    script:
+        "scripts/get_sample_mismatches.py"
 
 rule summarize_mismatches:
     input:

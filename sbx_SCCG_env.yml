@@ -1,0 +1,7 @@
+channels:
+ - bioconda
+dependencies:
+ - prokka
+ - blast=2.2
+ - diamond
+ - hmmer
