@@ -13,10 +13,9 @@ import sys
 
 rule all_WGS:
     input:
-      [expand(str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.ffn'), sample=Samples.keys()), # annotated ORFs from assembled genomes
+      [expand(str(ANNOTATION_FP/'prokka'/'{sample}'/'{sample}.faa'), sample=Samples.keys()), # annotated ORFs from assembled genomes
       str(ASSEMBLY_FP/'checkm_output'/'all_extended_summary.tsv'), # genome quality summary from checkm
-      #str(ASSEMBLY_FP/'anvio'/'all_SCCG_mismatches.tsv'), # number of mismatches in SCCGs between samples: keep but modify SCCG rule to use HMMER instead of anvio
-      str(ASSEMBLY_FP/'hmmer'/'all_SCCG_mismatches.tsv') # number of mismatches in SCCGs between samples
+      str(ASSEMBLY_FP/'hmmer'/'all_SCCG_hits.tsv') # hmmscan hits on SCCGs
       ]
 
 def get_input(wildcards):
