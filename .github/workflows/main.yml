@@ -39,11 +39,6 @@ jobs:
         with:
           # Additional channels like 'conda-forge' which can be used to install packages
           conda-channels: '' # optional, default is 
-
-      - name: Extract branch name
-        shell: bash
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_HEAD_REF#refs/heads/})"
-        id: extract_branch
       
       - name: Install Dependencies
         env:
@@ -55,9 +50,9 @@ jobs:
           bash install.sh -v
           if [ -z "${BRANCH_NAME}" ]
           then
-            git clone https://github.com/Ulthran/sbx_WGS/ extensions/sbx_WGS
+            git clone git@github.com:Ulthran/sbx_WGS.git extensions/sbx_WGS
           else
-            git clone -b $BRANCH_NAME https://github.com/Ulthran/sbx_WGS/ extensions/sbx_WGS
+            git clone -b $BRANCH_NAME git@github.com:Ulthran/sbx_WGS.git extensions/sbx_WGS
           fi
 
       - name: Run Tests
