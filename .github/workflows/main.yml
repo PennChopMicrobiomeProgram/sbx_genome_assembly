@@ -50,9 +50,9 @@ jobs:
           bash install.sh -v
           if [ -z "${BRANCH_NAME}" ]
           then
-            git clone git@github.com:Ulthran/sbx_WGS.git extensions/sbx_WGS
+            git clone https://github.com/PennChopMicrobiomeProgram/sbx_WGS extensions/sbx_WGS
           else
-            git clone -b $BRANCH_NAME git@github.com:Ulthran/sbx_WGS.git extensions/sbx_WGS
+            git clone -b $BRANCH_NAME https://github.com/PennChopMicrobiomeProgram/sbx_WGS extensions/sbx_WGS
           fi
 
       - name: Run Tests
