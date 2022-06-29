@@ -32,7 +32,7 @@ jobs:
       - name: Set Swap Space
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 40 # Recommended mem for checkm
+          swap-size-gb: 30 # mem reqs for checkm
     
       - name: Checkout Code
         uses: actions/checkout@v2
