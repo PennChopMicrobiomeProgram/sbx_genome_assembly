@@ -29,6 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Set Swap Space
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 40 # Recommended mem for checkm
+    
       - name: Checkout Code
         uses: actions/checkout@v2
 
