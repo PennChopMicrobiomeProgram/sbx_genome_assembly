@@ -45,7 +45,7 @@ jobs:
           BRANCH_NAME: ${{ github.head_ref }}
         run: |
           python -m pip install -U pytest
-          git clone git@github.com:sunbeam-labs/sunbeam.git --branch v2.1.0 sunbeam2
+          git clone https://github.com/sunbeam-labs/sunbeam.git --branch v2.1.0 sunbeam2
           cd sunbeam2
           bash install.sh -v
           if [ -z "${BRANCH_NAME}" ]
