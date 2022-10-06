@@ -42,7 +42,7 @@ class FullRunTests(unittest.TestCase):
             self.config_fp,
             "--use-conda",
             "-c4",
-            "all_WGS",
+            "test_WGS",
             "--directory",
             self.temp_dir,
         ])
