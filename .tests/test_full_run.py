@@ -11,7 +11,7 @@ class FullRunTests(unittest.TestCase):
         self.temp_dir = tempfile.mkdtemp()
 
         self.data_fp = os.path.join(self.temp_dir, "data/")
-        shutil.copytree("test_samples/", self.data_fp)
+        shutil.copytree(".tests/test_samples/", self.data_fp)
         os.remove(os.path.join(self.data_fp, "commands2generateReads.txt"))
 
         self.project_dir = os.path.join(self.temp_dir, "project/")
