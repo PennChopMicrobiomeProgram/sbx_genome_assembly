@@ -47,7 +47,7 @@ jobs:
           python -m pip install -U pytest
           git clone https://github.com/sunbeam-labs/sunbeam sunbeam
           cd sunbeam
-          bash install.sh -v
+          bash install.sh -v -e sunbeam
           if [ -z "${BRANCH_NAME}" ]
           then
             git clone https://github.com/PennChopMicrobiomeProgram/sbx_WGS extensions/sbx_WGS
@@ -57,5 +57,5 @@ jobs:
 
       - name: Run Tests
         run: |
-          source activate sunbeam3
+          source activate sunbeam
           pytest .tests/
