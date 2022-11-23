@@ -1,5 +1,7 @@
 # sbx_WGS (Whole Genome Sequencing)
 
+[![CI](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/main.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/main.yml)
+
 ## Introduction
 
 sbx_WGS is an extension for the sunbeam pipeline for de novo microbial genome assembly. This pipeline uses SPAdes for single genome assembly and CheckM and read map coverage of the assembled genome for quality assessment (sbx_SPARCQ.rules). In addition, this pipeline uses hmmer to identify SCCGs (sbx_SCCG.rules). FASTQ files for Mycoplasma genitalium are provided for testing.
