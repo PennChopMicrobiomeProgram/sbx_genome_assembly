@@ -19,5 +19,5 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-          VALIDATE_SNAKEMAKE_SNAKEFMT: true
           VALIDATE_PYTHON_BLACK: true
+          VALIDATE_SNAKEMAKE_SNAKEFMT: true
