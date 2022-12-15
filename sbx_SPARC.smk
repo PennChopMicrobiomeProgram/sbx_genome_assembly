@@ -30,9 +30,9 @@ rule run_spades_paired:
         "sbx_WGS_env.yml"
     shell:
         """
-       spades.py -1 {input.r1} -2 {input.r2} -o {output.tmp_out} -t {threads} --cov-cutoff 5.0 && \
-       mv {output.tmp_out} {output.out}
-       """
+        spades.py -1 {input.r1} -2 {input.r2} -o {output.tmp_out} -t {threads} --cov-cutoff 5.0 && \
+        mv {output.tmp_out} {output.out}
+        """
 
 
 rule run_spades_unpaired:
@@ -49,10 +49,10 @@ rule run_spades_unpaired:
         "sbx_WGS_env.yml"
     shell:
         """
-       spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 && \
-       mkdir -p {params.mk_dir} && \
-       cp {params.copy_from} {output}
-       """
+        spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 && \
+        mkdir -p {params.mk_dir} && \
+        cp {params.copy_from} {output}
+        """
 
 
 checkm_yml = Cfg["sbx_WGS"].get("checkm_yml")

@@ -75,8 +75,8 @@ rule prokka:
         "sbx_SCCG_env.yml"
     shell:
         """
-       prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 
-       """
+        prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 
+        """
 
 
 def get_WGS_path() -> str:
