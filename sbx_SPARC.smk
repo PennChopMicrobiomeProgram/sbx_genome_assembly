@@ -23,15 +23,13 @@ rule run_spades_paired:
         tmp_out=temp(ASSEMBLY_FP / "spades_bins" / "{sample}" / "output"),
     threads: Cfg["sbx_WGS"]["threads"]
     params:
-        outdir=str(ASSEMBLY_FP / "spades" / "{sample}"),
-        mk_dir=str(ASSEMBLY_FP / "spades_bins" / "{sample}"),
-        copy_from=str(ASSEMBLY_FP / "spades" / "{sample}" / "contigs.fasta"),
+        contigs=ASSEMBLY_FP / "spades_bins" / "{sample}" / "output" / "contigs.fasta",
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
         spades.py -1 {input.r1} -2 {input.r2} -o {output.tmp_out} -t {threads} --cov-cutoff 5.0 && \
-        mv {output.tmp_out} {output.out}
+        mv {params.contigs} {output.out}
         """
 
 
