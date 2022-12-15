@@ -12,6 +12,11 @@ import os
 import sys
 
 
+localrules:
+    all_WGS,
+    test_WGS,
+
+
 rule all_WGS:
     input:
         # annotated ORFs from assembled genomes

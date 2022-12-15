@@ -17,7 +17,10 @@ rule run_spades_paired:
         r1=str(QC_FP / "decontam" / "{sample}_1.fastq.gz"),
         r2=str(QC_FP / "decontam" / "{sample}_2.fastq.gz"),
     output:
-        str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna"),
+        out=str(
+            ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna"
+        ),
+        tmp_out=temp(ASSEMBLY_FP / "spades_bins" / "{sample}" / "output"),
     threads: Cfg["sbx_WGS"]["threads"]
     params:
         outdir=str(ASSEMBLY_FP / "spades" / "{sample}"),
@@ -27,9 +30,8 @@ rule run_spades_paired:
         "sbx_WGS_env.yml"
     shell:
         """
-       spades.py -1 {input.r1} -2 {input.r2} -o {params.outdir} -t {threads} --cov-cutoff 5.0 && \
-       mkdir -p {params.mk_dir} && \
-       cp {params.copy_from} {output}
+       spades.py -1 {input.r1} -2 {input.r2} -o {output.tmp_out} -t {threads} --cov-cutoff 5.0 && \
+       mv {output.tmp_out} {output.out}
        """
 
 
