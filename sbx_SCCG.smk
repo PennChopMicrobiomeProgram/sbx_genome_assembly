@@ -49,7 +49,7 @@ def get_input(wildcards):
         return str(ASSEMBLY_FP / "contigs" / "{sample}-contigs.fa")
     else:
         return str(
-            ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna"
+            ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"
         )
 
 

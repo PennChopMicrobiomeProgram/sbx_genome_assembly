@@ -61,7 +61,7 @@ if checkm_yml:
 
 rule checkm_tree:
     input:
-        str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna"),
+        str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"),
     output:
         str(ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done"),
     threads: Cfg["sbx_WGS"]["threads"]
