@@ -17,19 +17,17 @@ rule run_spades_paired:
         r1=str(QC_FP / "decontam" / "{sample}_1.fastq.gz"),
         r2=str(QC_FP / "decontam" / "{sample}_2.fastq.gz"),
     output:
-        out=str(
-            ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna"
+        str(
+            ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"
         ),
-        tmp_out=temp(ASSEMBLY_FP / "spades_bins" / "{sample}" / "output"),
     threads: Cfg["sbx_WGS"]["threads"]
     params:
-        contigs=ASSEMBLY_FP / "spades_bins" / "{sample}" / "output" / "contigs.fasta",
+        output_dir=ASSEMBLY_FP / "spades_bins" / "{sample}"
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
-        spades.py -1 {input.r1} -2 {input.r2} -o {output.tmp_out} -t {threads} --cov-cutoff 5.0 && \
-        mv {params.contigs} {output.out}
+        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0
         """
 
 
