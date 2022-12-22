@@ -12,6 +12,16 @@ import os
 import sys
 
 
+try:
+    BENCHMARK_FP
+except NameError:
+    BENCHMARK_FP = output_subdir(Cfg, "benchmarks")
+try:
+    LOG_FP
+except NameError:
+    LOG_FP = output_subdir(Cfg, "logs")
+
+
 localrules:
     all_WGS,
     test_WGS,
@@ -40,7 +50,7 @@ rule test_WGS:
                 ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa",
                 sample=Samples.keys(),
             ),
-            ASSEMBLY_FP / "hmmer" / "all_SCCG_hits.tsv",
+            RANDOM_FP / "hmmer" / "all_SCCG_hits.tsv",
         ],
 
 
@@ -58,6 +68,10 @@ rule reformat_fasta:
         get_input,
     output:
         str(ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_reformatted_contigs.fa"),
+    benchmark:
+        BENCHMARK_FP / "reformat_fasta_{sample}.tsv"
+    log:
+        LOG_FP / "reformat_fasta_{sample}.log",
     params:
         len=200,
     script:
@@ -69,13 +83,17 @@ rule prokka:
         str(ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_reformatted_contigs.fa"),
     output:
         str(ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa"),
+    benchmark:
+        BENCHMARK_FP / "prokka_{sample}.tsv"
+    log:
+        LOG_FP / "prokka_{sample}.log",
     params:
         outdir=str(ANNOTATION_FP / "prokka" / "{sample}"),
     conda:
         "sbx_SCCG_env.yml"
     shell:
         """
-        prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 
+        prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 2>&1 | tee {log}
         """
 
 
@@ -96,10 +114,14 @@ rule hmmpress:
             os.path.join(get_WGS_path(), "genes.hmm.h3{suffix}"),
             suffix={"f", "i", "m", "p"},
         ),
+    benchmark:
+        BENCHMARK_FP / "hmmpress.tsv"
+    log:
+        LOG_FP / "hmmpress.log"
     conda:
         "sbx_SCCG_env.yml"
     shell:
-        "hmmpress {input}"
+        "hmmpress {input} 2>&1 | tee {log}"
 
 
 rule hmmscan:
@@ -111,8 +133,10 @@ rule hmmscan:
         ),
     output:
         str(ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_SCCG_hits.tsv"),
+    benchmark:
+        BENCHMARK_FP / "hmmscan_{sample}.log"
     log:
-        "logs/{sample}_hmmscan.log",
+        LOG_FP / "hmmscan_{sample}.log",
     params:
         hmm=os.path.join(get_WGS_path(), "genes.hmm"),
     conda:

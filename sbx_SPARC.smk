@@ -20,14 +20,18 @@ rule run_spades_paired:
         str(
             ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"
         ),
-    threads: Cfg["sbx_WGS"]["threads"]
+    benchmark:
+        BENCHMARK_FP / "run_spades_paired_{sample}.tsv"
+    log:
+        LOG_FP / "run_spades_paired_{sample}.tsv",
     params:
         output_dir=ASSEMBLY_FP / "spades_bins" / "{sample}"
+    threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
-        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0
+        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 2>&1 | tee {log}
         """
 
 
@@ -36,16 +40,20 @@ rule run_spades_unpaired:
         r1=str(QC_FP / "decontam" / "{sample}_1.fastq.gz"),
     output:
         str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna"),
-    threads: Cfg["sbx_WGS"]["threads"]
+    benchmark:
+        BENCHMARK_FP / "run_spades_unpaired_{sample}.tsv"
+    log:
+        LOG_FP / "run_spades_unpaired_{sample}.tsv",
     params:
         outdir=str(ASSEMBLY_FP / "spades" / "{sample}"),
         mk_dir=str(ASSEMBLY_FP / "spades_bins" / "sample"),
         copy_from=str(ASSEMBLY_FP / "spades" / "{sample}" / "contigs.fasta"),
+    threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
-        spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 && \
+        spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 2>&1 | tee {log} && \
         mkdir -p {params.mk_dir} && \
         cp {params.copy_from} {output}
         """
@@ -64,13 +72,17 @@ rule checkm_tree:
         str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"),
     output:
         str(ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done"),
-    threads: Cfg["sbx_WGS"]["threads"]
+    benchmark:
+        BENCHMARK_FP / "checkm_tree_{sample}.tsv"
+    log:
+        LOG_FP / "checkm_tree_{sample}.log",
     params:
         bins=str(ASSEMBLY_FP / "spades_bins" / "{sample}"),
         tree_output=str(ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}"),
         checkm_yml=checkm_yml,
         rank_yml=rank_yml if "rank_yml" in locals() else None,
         taxon_yml=taxon_yml if "taxon_yml" in locals() else None,
+    threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"
     script:
@@ -88,6 +100,10 @@ rule checkm_summary:
             / "{sample}"
             / "extended_summary.tsv"
         ),
+    benchmark:
+        BENCHMARK_FP / "checkm_summary_{sample}.tsv"
+    log:
+        LOG_FP / "checkm_summary_{sample}.log",
     params:
         tree_output=str(ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}"),
         checkm_yml=checkm_yml,
@@ -126,6 +142,10 @@ rule index_assembled_genomes:
             / "bwa"
             / "{sample}_reformatted_contigs.fa.amb"
         ),
+    benchmark:
+        BENCHMARK_FP / "index_assembled_genomes_{sample}.tsv"
+    log:
+        LOG_FP / "index_assembled_genomes_{sample}.log",
     params:
         bwa_dir=str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa"),
         bwa_sample=str(
@@ -138,10 +158,12 @@ rule index_assembled_genomes:
     conda:
         "sbx_WGS_env.yml"
     shell:
-        "mkdir -p {params.bwa_dir} && \
+        """
+        mkdir -p {params.bwa_dir} && \
         cp {input} {params.bwa_dir} && \
         cd {params.bwa_dir} && \
-        bwa index {params.bwa_sample}"
+        bwa index {params.bwa_sample} 2>&1 | tee {log}
+        """
 
 
 rule align_2_genome:
@@ -165,7 +187,10 @@ rule align_2_genome:
                 / "{sample}.sam"
             )
         ),
-    threads: Cfg["sbx_WGS"]["threads"]
+    benchmark:
+        BENCHMARK_FP / "align_2_genome_{sample}.tsv"
+    log:
+        LOG_FP / "align_2_genome_{sample}.log",
     params:
         str(
             ASSEMBLY_FP
@@ -174,13 +199,15 @@ rule align_2_genome:
             / "bwa"
             / "{sample}_reformatted_contigs.fa"
         ),
+    threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
         bwa mem -M -t {threads} \
         {params} \
-        {input.reads} -o {output}
+        {input.reads} -o {output} \
+        2>&1 | tee {log}
         """
 
 
@@ -196,13 +223,18 @@ rule assembly_samtools_convert:
         ),
     output:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
+    benchmark:
+        BENCHMARK_FP / "assembly_samtools_convert_{sample}.tsv"
+    log:
+        view_log=LOG_FP / "assembly_samtools_convert_view_{sample}.log",
+        sort_log=LOG_FP / "assembly_samtools_convert_sort_{sample}.log",
     threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
-        samtools view -@ {threads} -b {input} | \
-        samtools sort -@ {threads} > {output}
+        samtools view -@ {threads} -b {input} 2>&1 | tee {log.view_log} | \
+        samtools sort -@ {threads} -o {output} 2>&1 | tee {log.sort_log}
         """
 
 
@@ -211,10 +243,14 @@ rule index_samtools:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
     output:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam.bai"),
+    benchmark:
+        BENCHMARK_FP / "index_samtools_{sample}.tsv"
+    log:
+        LOG_FP / "index_samtools_{sample}.log",
     conda:
         "sbx_WGS_env.yml"
     shell:
-        "samtools index {input} {output}"
+        "samtools index {input} {output} 2>&1 | tee {log}"
 
 
 rule samtools_get_coverage_filtered:
@@ -222,6 +258,10 @@ rule samtools_get_coverage_filtered:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
     output:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "genome_coverage_{sample}.csv"),
+    benchmark:
+        BENCHMARK_FP / "samtools_get_coverage_filtered_{sample}.tsv"
+    log:
+        LOG_FP / "samtools_get_coverage_filtered_{sample}.log",
     conda:
         "sbx_WGS_env.yml"
     script:
@@ -250,11 +290,15 @@ rule samtools_summarize_num_mapped_reads:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
     output:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "numReads_{sample}.csv"),
+    benchmark:
+        BENCHMARK_FP / "samtools_summarize_num_mapped_reads_{sample}.tsv"
+    log:
+        LOG_FP / "samtools_summarize_num_mapped_reads_{sample}.log",
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
-        samtools idxstats {input} | (sed 's/^/{wildcards.sample}\t/') > {output}
+        samtools idxstats {input} | tee {log} | (sed 's/^/{wildcards.sample}\t/') > {output}
         """
 
 
@@ -311,6 +355,10 @@ rule samtools_get_sliding_coverage:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
     output:
         str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "sliding_coverage_{sample}.csv"),
+    benchmark:
+        BENCHMARK_FP / "samtools_get_sliding_coverage_{sample}.tsv"
+    log:
+        LOG_FP / "samtools_get_sliding_coverage_{sample}.log",
     params:
         window_size=Cfg["sbx_WGS"]["window_size"],
         sampling=Cfg["sbx_WGS"]["sampling"],

@@ -1,8 +1,7 @@
-import shutil
+import sys
 from io import TextIOWrapper
 
 COUNT = 0
-
 
 def parse_fasta(f: TextIOWrapper) -> list:
     desc = ""
@@ -31,7 +30,8 @@ def write_fasta(f: TextIOWrapper, seqs: list):
     for desc, seq in seqs:
         f.write(f"{desc}\n{seq}\n")
 
-
-with open(snakemake.input[0]) as f:
-    with open(f"{snakemake.output[0]}", "w") as g:
-        write_fasta(g, list(filter_seqs(parse_fasta(f), snakemake.params.len)))
+with open(snakemake.log[0], "w") as l:
+    sys.stderr = sys.stdout = l
+    with open(snakemake.input[0]) as f:
+        with open(f"{snakemake.output[0]}", "w") as g:
+            write_fasta(g, list(filter_seqs(parse_fasta(f), snakemake.params.len)))
