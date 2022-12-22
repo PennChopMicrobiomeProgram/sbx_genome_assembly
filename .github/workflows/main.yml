@@ -21,3 +21,13 @@ jobs:
           sunbeam-version: 'dev'
           extension-name: 'PennChopMicrobiomeProgram/sbx_WGS'
           extension-branch-name: ${{ github.head_ref }}
+
+      - name: Dump Logs
+        shell: bash
+        if: always()
+        run: tail -n +1 projects/sunbeam_output/logs/*
+      
+      - name: Dump Stats
+        shell: bash
+        if: always()
+        run: cat projects/stats/*
