@@ -1,18 +1,14 @@
 import csv
 import os
 import pytest
+import shutil
 import subprocess as sp
 import tempfile
 
 
 @pytest.fixture
-def dir(pytestconfig):
-    return pytestconfig.getoption("dir")
-
-
-@pytest.fixture
-def setup(dir):
-    temp_dir = dir if dir else tempfile.mkdtemp()
+def setup():
+    temp_dir = tempfile.mkdtemp()
 
     reads_fp = os.path.abspath(".tests/data/reads/")
 
@@ -21,6 +17,8 @@ def setup(dir):
     sp.check_output(["sunbeam", "init", "--data_fp", reads_fp, project_dir])
 
     yield temp_dir, project_dir
+
+    shutil.rmtree(temp_dir)
 
 
 @pytest.fixture
@@ -48,9 +46,23 @@ def run_sunbeam(setup):
 
     yield all_SCCG_fp, benchmarks_fp
 
+    shutil.copytree(os.path.join(output_fp, "logs/"), "logs/")
+    shutil.copytree(os.path.join(project_dir, "stats/"), "stats/")
+
 
 def test_full_run(run_sunbeam):
     all_SCCG_fp, benchmarks_fp = run_sunbeam
 
     with open(all_SCCG_fp) as f:
         assert len(f.readlines()) > 140, f"Wasn't able to find at least 70 hits"
+
+def test_benchmarks(run_sunbeam):
+    all_SCCG_fp, benchmarks_fp = run_sunbeam
+
+    filename = os.listdir(benchmarks_fp)[0]
+    with open(os.path.join(benchmarks_fp, filename)) as f:
+        rd = csv.DictReader(f, delimiter="\t")
+        for r in rd:
+            assert (
+                float(r["cpu_time"]) < 0.5
+            ), f"cpu_time for {r['rule']} is higher than 0.5: {r['cpu_time']}"
