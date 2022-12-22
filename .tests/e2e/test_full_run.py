@@ -1,14 +1,16 @@
 import csv
 import os
 import pytest
-import shutil
 import subprocess as sp
-import tempfile
 
+
+@pytest.fixture(scope="session")
+def dir(pytestconfig):
+    return pytestconfig.getoption("dir")
 
 @pytest.fixture
-def setup():
-    temp_dir = tempfile.mkdtemp()
+def setup(dir):
+    temp_dir = dir
 
     reads_fp = os.path.abspath(".tests/data/reads/")
 
@@ -17,8 +19,6 @@ def setup():
     sp.check_output(["sunbeam", "init", "--data_fp", reads_fp, project_dir])
 
     yield temp_dir, project_dir
-
-    shutil.rmtree(temp_dir)
 
 
 @pytest.fixture
