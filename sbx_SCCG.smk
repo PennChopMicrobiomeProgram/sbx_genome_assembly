@@ -50,7 +50,7 @@ rule test_WGS:
                 ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa",
                 sample=Samples.keys(),
             ),
-            RANDOM_FP / "hmmer" / "all_SCCG_hits.tsv",
+            ASSEMBLY_FP / "hmmer" / "all_SCCG_hits.tsv",
         ],
 
 
