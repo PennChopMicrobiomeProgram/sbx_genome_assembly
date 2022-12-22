@@ -18,6 +18,6 @@ jobs:
       - name: Test with Sunbeam
         uses: sunbeam-labs/sbx_test_action@v1
         with:
-          sunbeam-version: '316-consider-moving-pipeline-components-to-extensions'
+          sunbeam-version: 'dev'
           extension-name: 'PennChopMicrobiomeProgram/sbx_WGS'
           extension-branch-name: ${{ github.head_ref }}
