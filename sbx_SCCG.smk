@@ -58,9 +58,7 @@ def get_input(wildcards):
     if Cfg["sbx_WGS"]["metagenome"]:
         return str(ASSEMBLY_FP / "contigs" / "{sample}-contigs.fa")
     else:
-        return str(
-            ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"
-        )
+        return str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta")
 
 
 rule reformat_fasta:
@@ -117,7 +115,7 @@ rule hmmpress:
     benchmark:
         BENCHMARK_FP / "hmmpress.tsv"
     log:
-        LOG_FP / "hmmpress.log"
+        LOG_FP / "hmmpress.log",
     conda:
         "sbx_SCCG_env.yml"
     shell:

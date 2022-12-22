@@ -3,6 +3,7 @@ from io import TextIOWrapper
 
 COUNT = 0
 
+
 def parse_fasta(f: TextIOWrapper) -> list:
     desc = ""
     seq = ""
@@ -29,6 +30,7 @@ def write_fasta(f: TextIOWrapper, seqs: list):
     # seqs.sort(key=lambda t: -len(t[1])) # Forces everything into mem at once but doesn't seem like there's a good way around that
     for desc, seq in seqs:
         f.write(f"{desc}\n{seq}\n")
+
 
 with open(snakemake.log[0], "w") as l:
     sys.stderr = sys.stdout = l

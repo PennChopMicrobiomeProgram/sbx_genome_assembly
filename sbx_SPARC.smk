@@ -17,15 +17,13 @@ rule run_spades_paired:
         r1=str(QC_FP / "decontam" / "{sample}_1.fastq.gz"),
         r2=str(QC_FP / "decontam" / "{sample}_2.fastq.gz"),
     output:
-        str(
-            ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"
-        ),
+        str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"),
     benchmark:
         BENCHMARK_FP / "run_spades_paired_{sample}.tsv"
     log:
         LOG_FP / "run_spades_paired_{sample}.tsv",
     params:
-        output_dir=ASSEMBLY_FP / "spades_bins" / "{sample}"
+        output_dir=ASSEMBLY_FP / "spades_bins" / "{sample}",
     threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"

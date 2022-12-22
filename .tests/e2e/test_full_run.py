@@ -8,6 +8,7 @@ import subprocess as sp
 def dir(pytestconfig):
     return pytestconfig.getoption("dir")
 
+
 @pytest.fixture
 def setup(dir):
     temp_dir = dir
