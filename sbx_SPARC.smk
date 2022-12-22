@@ -24,12 +24,14 @@ rule run_spades_paired:
         LOG_FP / "run_spades_paired_{sample}.tsv",
     params:
         output_dir=ASSEMBLY_FP / "spades_bins" / "{sample}",
+        log_fp=ASSEMBLY_FP / "spades_bins" / "{sample}" / "spades.log",
     threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"
     shell:
         """
-        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 2>&1 | tee {log}
+        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 2>&1 | tee {log} && \
+        cat {params.log_fp} >> {log}
         """
 
 
