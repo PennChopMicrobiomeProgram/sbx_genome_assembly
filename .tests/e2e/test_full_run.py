@@ -35,7 +35,7 @@ def run_sunbeam(setup):
                 "run",
                 "--profile",
                 project_dir,
-                "all_WGS",
+                "test_WGS",
                 "--directory",
                 temp_dir,
             ]
