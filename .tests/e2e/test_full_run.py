@@ -25,18 +25,23 @@ def setup():
 def run_sunbeam(setup):
     temp_dir, project_dir = setup
 
-    # Run the test job
-    sp.check_output(
-        [
-            "sunbeam",
-            "run",
-            "--profile",
-            project_dir,
-            "all_WGS",
-            "--directory",
-            temp_dir,
-        ]
-    )
+    try:
+        # Run the test job
+        sp.check_output(
+            [
+                "sunbeam",
+                "run",
+                "--profile",
+                project_dir,
+                "all_WGS",
+                "--directory",
+                temp_dir,
+            ]
+        )
+    except sp.CalledProcessError as e:
+        shutil.copytree(os.path.join(output_fp, "logs/"), "logs/")
+        shutil.copytree(os.path.join(project_dir, "stats/"), "stats/")
+        sp.CalledProcessError(e)
 
     output_fp = os.path.join(project_dir, "sunbeam_output/")
 
@@ -45,9 +50,6 @@ def run_sunbeam(setup):
     benchmarks_fp = os.path.join(project_dir, "stats/")
 
     yield all_SCCG_fp, benchmarks_fp
-
-    shutil.copytree(os.path.join(output_fp, "logs/"), "logs/")
-    shutil.copytree(os.path.join(project_dir, "stats/"), "stats/")
 
 
 def test_full_run(run_sunbeam):
