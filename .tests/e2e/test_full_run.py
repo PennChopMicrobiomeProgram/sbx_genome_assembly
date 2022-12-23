@@ -55,15 +55,3 @@ def test_full_run(run_sunbeam):
 
     with open(all_SCCG_fp) as f:
         assert len(f.readlines()) > 140, f"Wasn't able to find at least 70 hits"
-
-
-def test_benchmarks(run_sunbeam):
-    all_SCCG_fp, benchmarks_fp = run_sunbeam
-
-    filename = os.listdir(benchmarks_fp)[0]
-    with open(os.path.join(benchmarks_fp, filename)) as f:
-        rd = csv.DictReader(f, delimiter="\t")
-        for r in rd:
-            assert (
-                float(r["cpu_time"]) < 0.5
-            ), f"cpu_time for {r['rule']} is higher than 0.5: {r['cpu_time']}"
