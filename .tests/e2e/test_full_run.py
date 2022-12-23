@@ -25,6 +25,8 @@ def setup():
 def run_sunbeam(setup):
     temp_dir, project_dir = setup
 
+    output_fp = os.path.join(project_dir, "sunbeam_output/")
+
     try:
         # Run the test job
         sp.check_output(
@@ -42,8 +44,6 @@ def run_sunbeam(setup):
         shutil.copytree(os.path.join(output_fp, "logs/"), "logs/")
         shutil.copytree(os.path.join(project_dir, "stats/"), "stats/")
         sp.CalledProcessError(e)
-
-    output_fp = os.path.join(project_dir, "sunbeam_output/")
 
     all_SCCG_fp = os.path.join(output_fp, "assembly/hmmer/all_SCCG_hits.tsv")
 
