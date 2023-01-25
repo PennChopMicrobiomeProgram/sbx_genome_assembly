@@ -30,7 +30,7 @@ rule run_spades_paired:
         "sbx_WGS_env.yml"
     shell:
         """
-        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 64 2>&1 | tee {log}; \
+        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log}; \
         cat {params.log_fp} >> {log}
         """
 
