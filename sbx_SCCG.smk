@@ -2,15 +2,6 @@
 #
 # Rules for de novo assembly using SPAdes and post-assembly assessments
 
-from sunbeamlib import samtools
-from Bio import pairwise2, SeqIO
-import glob
-import pysam
-import re
-import yaml
-import os
-import sys
-
 
 try:
     BENCHMARK_FP
@@ -34,11 +25,11 @@ rule all_WGS:
         # hmmscan hits on SCCGs
         [
             expand(
-                str(ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa"),
+                ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa",
                 sample=Samples.keys(),
             ),
-            str(ASSEMBLY_FP / "checkm_output" / "all_extended_summary.tsv"),
-            str(ASSEMBLY_FP / "hmmer" / "all_SCCG_hits.tsv"),
+            ASSEMBLY_FP / "checkm_output" / "all_extended_summary.tsv",
+            ASSEMBLY_FP / "hmmer" / "all_SCCG_hits.tsv",
         ],
 
 
@@ -56,9 +47,9 @@ rule test_WGS:
 
 def get_input(wildcards):
     if Cfg["sbx_WGS"]["metagenome"]:
-        return str(ASSEMBLY_FP / "contigs" / "{sample}-contigs.fa")
+        return ASSEMBLY_FP / "contigs" / "{sample}-contigs.fa"
     else:
-        return str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta")
+        return ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"
 
 
 rule reformat_fasta:
