@@ -2,12 +2,6 @@
 #
 # Rules for de novo assembly using SPAdes and post-assembly assessments
 
-from sunbeamlib import samtools
-import glob
-import pysam
-import re
-import yaml
-
 
 ruleorder: run_spades_paired > run_spades_unpaired
 
