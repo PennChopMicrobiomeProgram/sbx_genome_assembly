@@ -17,8 +17,8 @@ rule run_spades_paired:
     log:
         LOG_FP / "run_spades_paired_{sample}.tsv",
     params:
-        output_dir=ASSEMBLY_FP / "spades_bins" / "{sample}",
-        log_fp=ASSEMBLY_FP / "spades_bins" / "{sample}" / "spades.log",
+        output_dir=str(ASSEMBLY_FP / "spades_bins" / "{sample}"),
+        log_fp=str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "spades.log"),
     threads: Cfg["sbx_WGS"]["threads"]
     conda:
         "sbx_WGS_env.yml"
