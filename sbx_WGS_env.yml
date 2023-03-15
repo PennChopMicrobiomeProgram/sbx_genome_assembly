@@ -1,9 +1,10 @@
+name: sbx_WGS
 channels:
  - conda-forge
  - bioconda
 dependencies:
  - bedtools
- - spades
+ - spades=3.15.5
  - samtools
  - checkm-genome
  - ncbi-genome-download

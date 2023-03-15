@@ -1,3 +1,4 @@
+name: sbx_SCCG
 channels:
  - bioconda
 dependencies:
