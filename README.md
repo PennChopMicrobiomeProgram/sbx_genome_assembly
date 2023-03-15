@@ -1,6 +1,7 @@
 # sbx_WGS (Whole Genome Sequencing)
 
 [![CI](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/main.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/main.yml)
+[![Super-Linter](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/linter.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/linter.yml)
 
 ## Introduction
 
