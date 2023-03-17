@@ -19,12 +19,12 @@ rule run_spades_paired:
     params:
         output_dir=str(ASSEMBLY_FP / "spades_bins" / "{sample}"),
         log_fp=str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "spades.log"),
-    threads: Cfg["sbx_WGS"]["threads"]
+    threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     shell:
         """
-        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log}; \
+        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log}
         cat {params.log_fp} >> {log}
         """
 
@@ -42,9 +42,9 @@ rule run_spades_unpaired:
         outdir=str(ASSEMBLY_FP / "spades" / "{sample}"),
         mk_dir=str(ASSEMBLY_FP / "spades_bins" / "sample"),
         copy_from=str(ASSEMBLY_FP / "spades" / "{sample}" / "contigs.fasta"),
-    threads: Cfg["sbx_WGS"]["threads"]
+    threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     shell:
         """
         spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log} && \
@@ -53,7 +53,7 @@ rule run_spades_unpaired:
         """
 
 
-checkm_yml = Cfg["sbx_WGS"].get("checkm_yml")
+checkm_yml = Cfg["sbx_genome_assembly"].get("checkm_yml")
 if checkm_yml:
     with open(checkm_yml, "r") as file:
         checkm_params = yaml.load(file, Loader=yaml.FullLoader)
@@ -76,9 +76,9 @@ rule checkm_tree:
         checkm_yml=checkm_yml,
         rank_yml=rank_yml if "rank_yml" in locals() else None,
         taxon_yml=taxon_yml if "taxon_yml" in locals() else None,
-    threads: Cfg["sbx_WGS"]["threads"]
+    threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     script:
         "scripts/checkm_tree.py"
 
@@ -103,7 +103,7 @@ rule checkm_summary:
         checkm_yml=checkm_yml,
         taxon_yml=taxon_yml if "taxon_yml" in locals() else None,
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     script:
         "scripts/checkm_summary.py"
 
@@ -150,7 +150,7 @@ rule index_assembled_genomes:
             / "{sample}_reformatted_contigs.fa"
         ),
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     shell:
         """
         mkdir -p {params.bwa_dir} && \
@@ -193,9 +193,9 @@ rule align_2_genome:
             / "bwa"
             / "{sample}_reformatted_contigs.fa"
         ),
-    threads: Cfg["sbx_WGS"]["threads"]
+    threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     shell:
         """
         bwa mem -M -t {threads} \
@@ -222,9 +222,9 @@ rule assembly_samtools_convert:
     log:
         view_log=LOG_FP / "assembly_samtools_convert_view_{sample}.log",
         sort_log=LOG_FP / "assembly_samtools_convert_sort_{sample}.log",
-    threads: Cfg["sbx_WGS"]["threads"]
+    threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     shell:
         """
         samtools view -@ {threads} -b {input} 2>&1 | tee {log.view_log} | \
@@ -242,7 +242,7 @@ rule index_samtools:
     log:
         LOG_FP / "index_samtools_{sample}.log",
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     shell:
         "samtools index {input} {output} 2>&1 | tee {log}"
 
@@ -257,7 +257,7 @@ rule samtools_get_coverage_filtered:
     log:
         LOG_FP / "samtools_get_coverage_filtered_{sample}.log",
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     script:
         "scripts/samtools_get_coverage_filtered.py"
 
@@ -289,7 +289,7 @@ rule samtools_summarize_num_mapped_reads:
     log:
         LOG_FP / "samtools_summarize_num_mapped_reads_{sample}.log",
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     shell:
         """
         samtools idxstats {input} | tee {log} | (sed 's/^/{wildcards.sample}\t/') > {output}
@@ -354,11 +354,11 @@ rule samtools_get_sliding_coverage:
     log:
         LOG_FP / "samtools_get_sliding_coverage_{sample}.log",
     params:
-        window_size=Cfg["sbx_WGS"]["window_size"],
-        sampling=Cfg["sbx_WGS"]["sampling"],
+        window_size=Cfg["sbx_genome_assembly"]["window_size"],
+        sampling=Cfg["sbx_genome_assembly"]["sampling"],
         sliding_window_coverage=sliding_window_coverage,
     conda:
-        "sbx_WGS_env.yml"
+        "sbx_genome_assembly_env.yml"
     script:
         "scripts/samtools_get_sliding_coverage.py"
 

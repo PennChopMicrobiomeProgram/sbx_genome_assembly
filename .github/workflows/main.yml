@@ -20,7 +20,7 @@ jobs:
         with:
           sunbeam-version: 'dev'
           install-options: '-m'
-          extension-name: 'PennChopMicrobiomeProgram/sbx_WGS'
+          extension-name: 'PennChopMicrobiomeProgram/sbx_genome_assembly'
           extension-branch-name: ${{ github.head_ref }}
 
       - name: Dump Logs

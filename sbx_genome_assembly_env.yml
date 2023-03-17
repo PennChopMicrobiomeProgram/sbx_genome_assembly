@@ -1,4 +1,4 @@
-name: sbx_WGS
+name: sbx_genome_assembly
 channels:
  - conda-forge
  - bioconda

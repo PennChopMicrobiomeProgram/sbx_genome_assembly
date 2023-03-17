@@ -53,7 +53,7 @@ def run_sunbeam(setup):
                 "conda",
                 "--profile",
                 project_dir,
-                "test_WGS",
+                "test_genome_assembly",
                 "--directory",
                 temp_dir,
             ]

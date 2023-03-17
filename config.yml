@@ -1,4 +1,4 @@
-sbx_WGS:
+sbx_genome_assembly:
   threads: 4
   metagenome: FALSE
   checkm_yml: # Leave blank if not wanted

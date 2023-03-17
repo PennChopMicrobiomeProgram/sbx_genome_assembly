@@ -2,6 +2,7 @@
 #
 # Rules for de novo assembly using SPAdes and post-assembly assessments
 
+import sys
 
 try:
     BENCHMARK_FP
@@ -14,11 +15,11 @@ except NameError:
 
 
 localrules:
-    all_WGS,
-    test_WGS,
+    all_genome_assembly,
+    test_genome_assembly,
 
 
-rule all_WGS:
+rule all_genome_assembly:
     input:
         # annotated ORFs from assembled genomes
         # genome quality summary from checkm
@@ -33,7 +34,7 @@ rule all_WGS:
         ],
 
 
-rule test_WGS:
+rule test_genome_assembly:
     input:
         # skip checkm, it takes too much memory for GHActions
         [
@@ -46,7 +47,7 @@ rule test_WGS:
 
 
 def get_input(wildcards):
-    if Cfg["sbx_WGS"]["metagenome"]:
+    if Cfg["sbx_genome_assembly"]["metagenome"]:
         return ASSEMBLY_FP / "contigs" / "{sample}-contigs.fa"
     else:
         return ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"
@@ -86,21 +87,21 @@ rule prokka:
         """
 
 
-def get_WGS_path() -> str:
+def get_genome_assembly_path() -> str:
     for fp in sys.path:
-        if fp.split("/")[-1] == "sbx_WGS":
+        if fp.split("/")[-1] == "sbx_genome_assembly":
             return fp
-    raise Error(
-        "Filepath for WGS not found, are you sure it's installed under extensions/sbx_WGS?"
+    sys.exit(
+        "Filepath for genome_assembly not found, are you sure it's installed under extensions/sbx_genome_assembly?"
     )
 
 
 rule hmmpress:
     input:
-        os.path.join(get_WGS_path(), "genes.hmm"),
+        os.path.join(get_genome_assembly_path(), "genes.hmm"),
     output:
         expand(
-            os.path.join(get_WGS_path(), "genes.hmm.h3{suffix}"),
+            os.path.join(get_genome_assembly_path(), "genes.hmm.h3{suffix}"),
             suffix={"f", "i", "m", "p"},
         ),
     benchmark:
@@ -117,7 +118,7 @@ rule hmmscan:
     input:
         faa=str(ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa"),
         aux=expand(
-            os.path.join(get_WGS_path(), "genes.hmm.h3{suffix}"),
+            os.path.join(get_genome_assembly_path(), "genes.hmm.h3{suffix}"),
             suffix={"f", "i", "m", "p"},
         ),
     output:
@@ -127,7 +128,7 @@ rule hmmscan:
     log:
         LOG_FP / "hmmscan_{sample}.log",
     params:
-        hmm=os.path.join(get_WGS_path(), "genes.hmm"),
+        hmm=os.path.join(get_genome_assembly_path(), "genes.hmm"),
     conda:
         "sbx_SCCG_env.yml"
     shell:
