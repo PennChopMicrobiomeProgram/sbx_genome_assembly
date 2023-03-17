@@ -8,10 +8,10 @@ ruleorder: run_spades_paired > run_spades_unpaired
 
 rule run_spades_paired:
     input:
-        r1=str(QC_FP / "decontam" / "{sample}_1.fastq.gz"),
-        r2=str(QC_FP / "decontam" / "{sample}_2.fastq.gz"),
+        r1=QC_FP / "decontam" / "{sample}_1.fastq.gz",
+        r2=QC_FP / "decontam" / "{sample}_2.fastq.gz",
     output:
-        str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"),
+        ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta",
     benchmark:
         BENCHMARK_FP / "run_spades_paired_{sample}.tsv"
     log:
