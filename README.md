@@ -5,6 +5,7 @@
 [![Tests](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/main.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/main.yml)
 [![Super-Linter](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/linter.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/linter.yml)
 
+
 ## Introduction
 
 sbx_genome_assembly is an extension for the sunbeam pipeline for de novo microbial genome assembly. This pipeline uses SPAdes for single genome assembly and CheckM and read map coverage of the assembled genome for quality assessment (sbx_SPARC rules). In addition, this pipeline uses hmmer to identify SCCGs (sbx_SCCG.rules). FASTQ files for Mycoplasma genitalium are provided for testing.
