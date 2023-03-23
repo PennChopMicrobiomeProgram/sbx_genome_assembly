@@ -80,5 +80,5 @@ def test_full_run(run_sunbeam):
     assert os.path.exists(contigs_fp)
     assert os.stat(contigs_fp).st_size > 0
     assert os.path.exists(all_SCCG_fp)
-    #with open(all_SCCG_fp) as f:
+    # with open(all_SCCG_fp) as f:
     #    assert len(f.readlines()) > 140, f"Wasn't able to find at least 70 hits"
