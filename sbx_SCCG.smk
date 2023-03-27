@@ -80,7 +80,7 @@ rule prokka:
     params:
         outdir=str(ANNOTATION_FP / "prokka" / "{sample}"),
     conda:
-        "sbx_SCCG_env.yml"
+        "sbx_SCCG_prokka_env.yml"
     shell:
         """
         prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 2>&1 | tee {log}
