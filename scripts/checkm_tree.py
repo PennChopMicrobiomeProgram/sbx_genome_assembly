@@ -4,7 +4,7 @@ from pathlib import Path
 
 with open(snakemake.log[0], "w") as log:
     args = ["checkm"]
-    
+
     if (
         snakemake.params.checkm_yml
         and snakemake.wildcards.sample in snakemake.params.taxon_yml
@@ -14,13 +14,11 @@ with open(snakemake.log[0], "w") as log:
         args += ["taxonomy_wf", "-t", f"{snakemake.threads}", f"{rank}", f"{taxon}"]
     else:
         args += ["lineage_wf", "-t", f"{snakemake.threads}"]
-    
+
     args += [f"{snakemake.params.bins}", f"{snakemake.params.tree_output}"]
-    
+
     try:
-        checkm_output = sp.check_output(
-            args
-        )
+        checkm_output = sp.check_output(args)
     except sp.CalledProcessError as e:
         log.write(e.output.decode())
         sys.exit(e.returncode)
