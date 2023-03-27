@@ -1,0 +1,6 @@
+name: sbx_SCCG_prokka
+channels:
+ - bioconda
+ - conda-forge
+dependencies:
+ - prokka=1.12

@@ -1,26 +1,29 @@
-# sbx_WGS (Whole Genome Sequencing)
+<img src="https://github.com/sunbeam-labs/sunbeam/blob/stable/docs/images/sunbeam_logo.gif" width=120, height=120 align="left" />
 
-[![CI](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/main.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/main.yml)
-[![Super-Linter](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/linter.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/actions/workflows/linter.yml)
+# sbx_genome_assembly
+
+[![Tests](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/main.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/main.yml)
+[![Super-Linter](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/linter.yml/badge.svg)](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/actions/workflows/linter.yml)
+
 
 ## Introduction
 
-sbx_WGS is an extension for the sunbeam pipeline for de novo microbial genome assembly. This pipeline uses SPAdes for single genome assembly and CheckM and read map coverage of the assembled genome for quality assessment (sbx_SPARCQ.rules). In addition, this pipeline uses hmmer to identify SCCGs (sbx_SCCG.rules). FASTQ files for Mycoplasma genitalium are provided for testing.
+sbx_genome_assembly is an extension for the sunbeam pipeline for de novo microbial genome assembly. This pipeline uses SPAdes for single genome assembly and CheckM and read map coverage of the assembled genome for quality assessment (sbx_SPARC rules). In addition, this pipeline uses hmmer to identify SCCGs (sbx_SCCG.rules). FASTQ files for Mycoplasma genitalium are provided for testing.
 
 ### Installation
 
 ```
-sunbeam extend https://github.com/PennChopMicrobiomeProgram/sbx_WGS.git
+sunbeam extend https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly.git
 ```
 
 Recommended for cluster: include the memory specifications in cluster.json, especially for checkm_tree rule
 
 ## Running
 
-Run with sunbeam on the target `all_WGS`,
+Run with sunbeam on the target `all_genome_assembly`,
 
 ```
-sunbeam run --configfile /path/to/sunbeam_config.yml all_WGS
+sunbeam run --configfile /path/to/sunbeam_config.yml all_genome_assembly
 ```
 
 ### Options for config.yml
@@ -43,19 +46,19 @@ The R markdown template to display the results from this pipeline and for analys
 ## Legacy Installation
 
 ```
-git clone https://github.com/PennChopMicrobiomeProgram/sbx_WGS.git extensions/sbx_WGS
-cd extensions/sbx_WGS
+git clone https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly.git extensions/sbx_genome_assembly
+cd extensions/sbx_genome_assembly
 cat config.yml >> /path/to/sunbeam_config.yml
 ```
 
 ## Issues with pipeline
 
-Please post any issues with this extension [here](https://github.com/PennChopMicrobiomeProgram/sbx_WGS/issues).
+Please post any issues with this extension [here](https://github.com/PennChopMicrobiomeProgram/sbx_genome_assembly/issues).
 
 ## TODO (see comments in sbx_SCCG.rules)
 
 1. Use number of SCCGs to evaluate contamination and completeness in genomes
-2. Find method for taxonomic assignment for WGS
+2. Find method for taxonomic assignment for genome assembly
 3. Remove rules for read mapping; modify sbx_mapping_withFilter to take assembled genomes from this pipeline
 
 ## Contributors

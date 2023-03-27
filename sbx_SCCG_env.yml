@@ -1,7 +1,7 @@
+name: sbx_SCCG
 channels:
  - bioconda
 dependencies:
- - prokka
- - blast=2.2
+ - blast>=2.2
  - diamond
  - hmmer

@@ -1,61 +1,34 @@
-name: CI
+name: Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, main ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, main ]
 
 jobs:
-  lint:
-    name: Lint Code Base
+  test-e2e:
+    name: Test Extension with Sunbeam
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: Lint Code Base
-        uses: github/super-linter@v3.17.0
-        env:
-          VALIDATE_ALL_CODEBASE: true
-          DEFAULT_BRANCH: master
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          VALIDATE_SNAKEMAKE_SNAKEFMT: true
-
-  test-snakemake-v3:
-    name: Test Extension (sunbeam v3)
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-
-      - name: setup-conda
-        # You may pin to the exact commit or the version.
-        # uses: s-weigand/setup-conda@945fd9e7c92f1efb12634ba552ee0b2ec140a5fd
-        uses: s-weigand/setup-conda@v1.1.0
+        uses: actions/checkout@v3
+        
+      - name: Test with Sunbeam
+        uses: sunbeam-labs/sbx_test_action@v0
         with:
-          # Additional channels like 'conda-forge' which can be used to install packages
-          conda-channels: '' # optional, default is 
-      
-      - name: Install Dependencies
-        env:
-          BRANCH_NAME: ${{ github.head_ref }}
-        run: |
-          python -m pip install -U pytest
-          git clone https://github.com/sunbeam-labs/sunbeam sunbeam
-          cd sunbeam
-          bash install.sh -v -e sunbeam
-          if [ -z "${BRANCH_NAME}" ]
-          then
-            git clone https://github.com/PennChopMicrobiomeProgram/sbx_WGS extensions/sbx_WGS
-          else
-            git clone -b $BRANCH_NAME https://github.com/PennChopMicrobiomeProgram/sbx_WGS extensions/sbx_WGS
-          fi
+          sunbeam-version: 'dev'
+          install-options: '-m'
+          extension-name: 'PennChopMicrobiomeProgram/sbx_genome_assembly'
+          extension-branch-name: ${{ github.head_ref }}
 
-      - name: Run Tests
-        run: |
-          source activate sunbeam
-          pytest .tests/
+      - name: Dump Logs
+        shell: bash
+        if: always()
+        run: tail -n +1 logs/*
+      
+      - name: Dump Stats
+        shell: bash
+        if: always()
+        run: cat stats/*
