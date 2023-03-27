@@ -31,9 +31,9 @@ rule run_spades_paired:
 
 rule run_spades_unpaired:
     input:
-        r1=str(QC_FP / "decontam" / "{sample}_1.fastq.gz"),
+        r1=QC_FP / "decontam" / "{sample}_1.fastq.gz",
     output:
-        str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna"),
+        ASSEMBLY_FP / "spades_bins" / "{sample}" / "{sample}_assembled_contigs.fna",
     benchmark:
         BENCHMARK_FP / "run_spades_unpaired_{sample}.tsv"
     log:
@@ -63,9 +63,9 @@ if checkm_yml:
 
 rule checkm_tree:
     input:
-        str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta"),
+        ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta",
     output:
-        str(ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done"),
+        ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
     benchmark:
         BENCHMARK_FP / "checkm_tree_{sample}.tsv"
     log:
@@ -85,15 +85,13 @@ rule checkm_tree:
 
 rule checkm_summary:
     input:
-        str(ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done"),
+        ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
     output:
-        str(
             ASSEMBLY_FP
             / "checkm_output"
             / "summary"
             / "{sample}"
-            / "extended_summary.tsv"
-        ),
+            / "extended_summary.tsv",
     benchmark:
         BENCHMARK_FP / "checkm_summary_{sample}.tsv"
     log:
@@ -109,9 +107,7 @@ rule checkm_summary:
 
 
 def _checkm_summary_tsvs(w):
-    pattern = str(
-        ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv"
-    )
+    pattern = ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv"
     paths = sorted(expand(pattern, sample=Samples.keys()))
     return paths
 
@@ -120,22 +116,20 @@ rule checkm_summarize:
     input:
         _checkm_summary_tsvs,
     output:
-        str(ASSEMBLY_FP / "checkm_output" / "all_extended_summary.tsv"),
+        ASSEMBLY_FP / "checkm_output" / "all_extended_summary.tsv",
     shell:
         "(head -n 1 {input[0]}; tail -q -n +2 {input}) > {output}"
 
 
 rule index_assembled_genomes:
     input:
-        str(ASSEMBLY_FP / "anvio" / "{sample}" / "{sample}_reformatted_contigs.fa"),  #this file comes from anvio
+        ASSEMBLY_FP / "anvio" / "{sample}" / "{sample}_reformatted_contigs.fa",  #this file comes from anvio
     output:
-        str(
             ASSEMBLY_FP
             / "read_mapping"
             / "{sample}"
             / "bwa"
-            / "{sample}_reformatted_contigs.fa.amb"
-        ),
+            / "{sample}_reformatted_contigs.fa.amb",
     benchmark:
         BENCHMARK_FP / "index_assembled_genomes_{sample}.tsv"
     log:
@@ -162,24 +156,20 @@ rule index_assembled_genomes:
 
 rule align_2_genome:
     input:
-        reads=expand(str(QC_FP / "decontam" / "{{sample}}_{rp}.fastq.gz"), rp=Pairs),
-        index=str(
-            ASSEMBLY_FP
+        reads=expand(QC_FP / "decontam" / "{{sample}}_{rp}.fastq.gz", rp=Pairs),
+        index=ASSEMBLY_FP
             / "read_mapping"
             / "{sample}"
             / "bwa"
-            / "{sample}_reformatted_contigs.fa.amb"
-        ),
+            / "{sample}_reformatted_contigs.fa.amb",
     output:
         temp(
-            str(
-                ASSEMBLY_FP
+            ASSEMBLY_FP
                 / "read_mapping"
                 / "{sample}"
                 / "bwa"
                 / "intermediates"
                 / "{sample}.sam"
-            )
         ),
     benchmark:
         BENCHMARK_FP / "align_2_genome_{sample}.tsv"
@@ -207,16 +197,16 @@ rule align_2_genome:
 
 rule assembly_samtools_convert:
     input:
-        str(
+        
             ASSEMBLY_FP
             / "read_mapping"
             / "{sample}"
             / "bwa"
             / "intermediates"
             / "{sample}.sam"
-        ),
+        ,
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam",
     benchmark:
         BENCHMARK_FP / "assembly_samtools_convert_{sample}.tsv"
     log:
@@ -234,9 +224,9 @@ rule assembly_samtools_convert:
 
 rule index_samtools:
     input:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam",
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam.bai"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam.bai",
     benchmark:
         BENCHMARK_FP / "index_samtools_{sample}.tsv"
     log:
@@ -249,9 +239,9 @@ rule index_samtools:
 
 rule samtools_get_coverage_filtered:
     input:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam",
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "genome_coverage_{sample}.csv"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "genome_coverage_{sample}.csv",
     benchmark:
         BENCHMARK_FP / "samtools_get_coverage_filtered_{sample}.tsv"
     log:
@@ -263,9 +253,9 @@ rule samtools_get_coverage_filtered:
 
 
 def _sorted_csvs(w):
-    pattern = str(
+    pattern = 
         ASSEMBLY_FP / "read_mapping" / "{sample}" / "genome_coverage_{sample}.csv"
-    )
+    
     paths = sorted(expand(pattern, sample=Samples.keys()))
     return paths
 
@@ -274,16 +264,16 @@ rule summarize_assembly_coverage:
     input:
         _sorted_csvs,
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "all_coverage.csv"),
+        ASSEMBLY_FP / "read_mapping" / "all_coverage.csv",
     shell:
         "(head -n 1 {input[0]}; tail -q -n +2 {input}) > {output}"
 
 
 rule samtools_summarize_num_mapped_reads:
     input:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam",
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "numReads_{sample}.csv"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "numReads_{sample}.csv",
     benchmark:
         BENCHMARK_FP / "samtools_summarize_num_mapped_reads_{sample}.tsv"
     log:
@@ -297,7 +287,7 @@ rule samtools_summarize_num_mapped_reads:
 
 
 def _numReads(w):
-    pattern = str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "numReads_{sample}.csv")
+    pattern = ASSEMBLY_FP / "read_mapping" / "{sample}" / "numReads_{sample}.csv"
     paths = sorted(expand(pattern, sample=Samples.keys()))
     return paths
 
@@ -306,7 +296,7 @@ rule samtools_summarize_numReads:
     input:
         _numReads,
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "all_numReads.csv"),
+        ASSEMBLY_FP / "read_mapping" / "all_numReads.csv",
     shell:
         "(cat {input}) > {output}"
 
@@ -346,9 +336,9 @@ def sliding_window_coverage(genome, bamfile, sample, output_fp, N, sampling):
 
 rule samtools_get_sliding_coverage:
     input:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam",
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "{sample}" / "sliding_coverage_{sample}.csv"),
+        ASSEMBLY_FP / "read_mapping" / "{sample}" / "sliding_coverage_{sample}.csv",
     benchmark:
         BENCHMARK_FP / "samtools_get_sliding_coverage_{sample}.tsv"
     log:
@@ -364,9 +354,9 @@ rule samtools_get_sliding_coverage:
 
 
 def _sliding_coverage_csvs(w):
-    pattern = str(
+    pattern = 
         ASSEMBLY_FP / "read_mapping" / "{sample}" / "sliding_coverage_{sample}.csv"
-    )
+    
     paths = sorted(expand(pattern, sample=Samples.keys()))
     return paths
 
@@ -375,6 +365,6 @@ rule samtools_summarize_sliding_coverage:
     input:
         _sliding_coverage_csvs,
     output:
-        str(ASSEMBLY_FP / "read_mapping" / "all_sliding_coverage.csv"),
+        ASSEMBLY_FP / "read_mapping" / "all_sliding_coverage.csv",
     shell:
         "(head -n 1 {input[0]}; tail -q -n +2 {input}) > {output}"
