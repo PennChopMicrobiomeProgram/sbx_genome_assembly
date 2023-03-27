@@ -1,21 +1,29 @@
-import os
+import subprocess as sp
 import sys
 
-with open(snakemake.log[0], "w") as l:
-    sys.stderr = sys.stdout = l
+with open(snakemake.log[0], "w") as log:
+    taxon = "lineage"
     if (
         snakemake.params.checkm_yml
         and snakemake.wildcards.sample in snakemake.params.taxon_yml
     ):
         taxon = str(snakemake.params.taxon_yml[snakemake.wildcards.sample])
-        os.system(
-            """
-        checkm qa --out_format 2 --tab_table --file {snakemake.output} "{snakemake.params.tree_output}/{taxon}.ms" {snakemake.params.tree_output}
-        """
+
+    try:
+        checkm_output = sp.check_output(
+            [
+                "checkm",
+                "qa",
+                "--out_format",
+                "2",
+                "--tab_table",
+                "--file",
+                f"{snakemake.output}",
+                f'"{snakemake.params.tree_output}/{taxon}.ms"',
+                f"{snakemake.params.tree_output}",
+            ]
         )
-    else:
-        os.system(
-            """
-        checkm qa --out_format 2 --tab_table --file {snakemake.output} "{snakemake.params.tree_output}/lineage.ms" {snakemake.params.tree_output}
-        """
-        )
+    except sp.CalledProcessError as e:
+        log.write(e.output.decode())
+        sys.exit(e.returncode)
+    log.write(checkm_output.decode())
