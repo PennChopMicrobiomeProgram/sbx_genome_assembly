@@ -87,11 +87,7 @@ rule checkm_summary:
     input:
         ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
     output:
-            ASSEMBLY_FP
-            / "checkm_output"
-            / "summary"
-            / "{sample}"
-            / "extended_summary.tsv",
+        ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv",
     benchmark:
         BENCHMARK_FP / "checkm_summary_{sample}.tsv"
     log:
@@ -107,7 +103,9 @@ rule checkm_summary:
 
 
 def _checkm_summary_tsvs(w):
-    pattern = ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv"
+    pattern = (
+        ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv"
+    )
     paths = sorted(expand(pattern, sample=Samples.keys()))
     return paths
 
@@ -125,11 +123,11 @@ rule index_assembled_genomes:
     input:
         ASSEMBLY_FP / "anvio" / "{sample}" / "{sample}_reformatted_contigs.fa",  #this file comes from anvio
     output:
-            ASSEMBLY_FP
-            / "read_mapping"
-            / "{sample}"
-            / "bwa"
-            / "{sample}_reformatted_contigs.fa.amb",
+        ASSEMBLY_FP
+        / "read_mapping"
+        / "{sample}"
+        / "bwa"
+        / "{sample}_reformatted_contigs.fa.amb",
     benchmark:
         BENCHMARK_FP / "index_assembled_genomes_{sample}.tsv"
     log:
@@ -158,18 +156,18 @@ rule align_2_genome:
     input:
         reads=expand(QC_FP / "decontam" / "{{sample}}_{rp}.fastq.gz", rp=Pairs),
         index=ASSEMBLY_FP
-            / "read_mapping"
-            / "{sample}"
-            / "bwa"
-            / "{sample}_reformatted_contigs.fa.amb",
+        / "read_mapping"
+        / "{sample}"
+        / "bwa"
+        / "{sample}_reformatted_contigs.fa.amb",
     output:
         temp(
             ASSEMBLY_FP
-                / "read_mapping"
-                / "{sample}"
-                / "bwa"
-                / "intermediates"
-                / "{sample}.sam"
+            / "read_mapping"
+            / "{sample}"
+            / "bwa"
+            / "intermediates"
+            / "{sample}.sam"
         ),
     benchmark:
         BENCHMARK_FP / "align_2_genome_{sample}.tsv"
@@ -197,14 +195,12 @@ rule align_2_genome:
 
 rule assembly_samtools_convert:
     input:
-        
-            ASSEMBLY_FP
-            / "read_mapping"
-            / "{sample}"
-            / "bwa"
-            / "intermediates"
-            / "{sample}.sam"
-        ,
+        ASSEMBLY_FP
+        / "read_mapping"
+        / "{sample}"
+        / "bwa"
+        / "intermediates"
+        / "{sample}.sam",
     output:
         ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam",
     benchmark:
@@ -253,9 +249,7 @@ rule samtools_get_coverage_filtered:
 
 
 def _sorted_csvs(w):
-    pattern = 
-        ASSEMBLY_FP / "read_mapping" / "{sample}" / "genome_coverage_{sample}.csv"
-    
+    pattern = ASSEMBLY_FP / "read_mapping" / "{sample}" / "genome_coverage_{sample}.csv"
     paths = sorted(expand(pattern, sample=Samples.keys()))
     return paths
 
@@ -354,9 +348,9 @@ rule samtools_get_sliding_coverage:
 
 
 def _sliding_coverage_csvs(w):
-    pattern = 
+    pattern = (
         ASSEMBLY_FP / "read_mapping" / "{sample}" / "sliding_coverage_{sample}.csv"
-    
+    )
     paths = sorted(expand(pattern, sample=Samples.keys()))
     return paths
 
