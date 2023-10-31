@@ -19,12 +19,13 @@ rule run_spades_paired:
     params:
         output_dir=str(ASSEMBLY_FP / "spades_bins" / "{sample}"),
         log_fp=str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "spades.log"),
+        extra=Cfg["sbx_genome_assembly"]["spades_opts"],
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
-        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log}
+        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 {params.extra} 2>&1 | tee {log}
         cat {params.log_fp} >> {log}
         """
 
@@ -44,7 +45,7 @@ rule run_spades_unpaired:
         copy_from=str(ASSEMBLY_FP / "spades" / "{sample}" / "contigs.fasta"),
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log} && \
@@ -78,7 +79,7 @@ rule checkm_tree:
         taxon_yml=taxon_yml if "taxon_yml" in locals() else None,
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/checkm_tree.py"
 
@@ -97,7 +98,7 @@ rule checkm_summary:
         checkm_yml=checkm_yml,
         taxon_yml=taxon_yml if "taxon_yml" in locals() else None,
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/checkm_summary.py"
 
@@ -142,7 +143,7 @@ rule index_assembled_genomes:
             / "{sample}_reformatted_contigs.fa"
         ),
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         mkdir -p {params.bwa_dir} && \
@@ -183,7 +184,7 @@ rule align_2_genome:
         ),
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         bwa mem -M -t {threads} \
@@ -210,7 +211,7 @@ rule assembly_samtools_convert:
         sort_log=LOG_FP / "assembly_samtools_convert_sort_{sample}.log",
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         samtools view -@ {threads} -b {input} 2>&1 | tee {log.view_log} | \
@@ -228,7 +229,7 @@ rule index_samtools:
     log:
         LOG_FP / "index_samtools_{sample}.log",
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         "samtools index {input} {output} 2>&1 | tee {log}"
 
@@ -243,7 +244,7 @@ rule samtools_get_coverage_filtered:
     log:
         LOG_FP / "samtools_get_coverage_filtered_{sample}.log",
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/samtools_get_coverage_filtered.py"
 
@@ -273,7 +274,7 @@ rule samtools_summarize_num_mapped_reads:
     log:
         LOG_FP / "samtools_summarize_num_mapped_reads_{sample}.log",
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         samtools idxstats {input} | tee {log} | (sed 's/^/{wildcards.sample}\t/') > {output}
@@ -342,7 +343,7 @@ rule samtools_get_sliding_coverage:
         sampling=Cfg["sbx_genome_assembly"]["sampling"],
         sliding_window_coverage=sliding_window_coverage,
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/samtools_get_sliding_coverage.py"
 
