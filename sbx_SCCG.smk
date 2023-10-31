@@ -57,7 +57,7 @@ rule reformat_fasta:
     input:
         get_input,
     output:
-        str(ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_reformatted_contigs.fa"),
+        ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_reformatted_contigs.fa",
     benchmark:
         BENCHMARK_FP / "reformat_fasta_{sample}.tsv"
     log:
@@ -70,9 +70,9 @@ rule reformat_fasta:
 
 rule prokka:
     input:
-        str(ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_reformatted_contigs.fa"),
+        ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_reformatted_contigs.fa",
     output:
-        str(ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa"),
+        ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa",
     benchmark:
         BENCHMARK_FP / "prokka_{sample}.tsv"
     log:
@@ -116,13 +116,13 @@ rule hmmpress:
 
 rule hmmscan:
     input:
-        faa=str(ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa"),
+        faa=ANNOTATION_FP / "prokka" / "{sample}" / "{sample}.faa",
         aux=expand(
             os.path.join(get_genome_assembly_path(), "genes.hmm.h3{suffix}"),
             suffix={"f", "i", "m", "p"},
         ),
     output:
-        str(ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_SCCG_hits.tsv"),
+        ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_SCCG_hits.tsv",
     benchmark:
         BENCHMARK_FP / "hmmscan_{sample}.log"
     log:
@@ -138,10 +138,10 @@ rule hmmscan:
 rule summarize_hmmscan:
     input:
         expand(
-            str(ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_SCCG_hits.tsv"),
+            ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_SCCG_hits.tsv",
             sample=Samples.keys(),
         ),
     output:
-        str(ASSEMBLY_FP / "hmmer" / "all_SCCG_hits.tsv"),
+        ASSEMBLY_FP / "hmmer" / "all_SCCG_hits.tsv",
     shell:
         "cat {input} > {output}"

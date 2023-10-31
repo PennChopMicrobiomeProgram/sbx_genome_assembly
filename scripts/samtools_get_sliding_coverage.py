@@ -1,7 +1,4 @@
-import sys
-
-with open(snakemake.log[0], "w") as l:
-    sys.stderr = sys.stdout = l
+with open(snakemake.log[0], "w") as log:
     snakemake.params.sliding_window_coverage(
         snakemake.wildcards.sample,
         snakemake.input[0],
