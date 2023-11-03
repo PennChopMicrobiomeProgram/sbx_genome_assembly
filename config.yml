@@ -1,7 +1,7 @@
 sbx_genome_assembly:
   threads: 4
   metagenome: FALSE
-  spades_opts: ''
+  spades_opts: '--isolate'
   checkm_yml: # Leave blank if not wanted
   window_size: 5000
   sampling: 5000
