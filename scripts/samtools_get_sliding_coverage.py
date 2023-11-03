@@ -2,6 +2,7 @@ import csv
 import numpy
 import subprocess
 
+
 def sliding_window_coverage(genome, bamfile, sample, output_fp, N, sampling):
     print(genome)
     print(bamfile)
@@ -33,6 +34,7 @@ def sliding_window_coverage(genome, bamfile, sample, output_fp, N, sampling):
                 for i, x in enumerate(moving_avg):
                     if i % sampling == 0:
                         writer.writerow([genome, segment, sample, i, x])
+
 
 with open(snakemake.log[0], "w") as log:
     sliding_window_coverage(
