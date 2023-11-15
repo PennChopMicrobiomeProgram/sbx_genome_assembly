@@ -35,4 +35,4 @@ with open(snakemake.log[0], "w") as log:
     sys.stdout.write(checkm_output.decode())
     log.write(checkm_output.decode())
 
-    Path(snakemake.output).touch()
+    Path(snakemake.output[0]).touch()
