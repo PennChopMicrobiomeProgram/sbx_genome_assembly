@@ -50,7 +50,7 @@ def run_sunbeam(setup):
             "run",
             "--profile",
             project_dir,
-            "all_genome_assembly",
+            "test_genome_assembly",
             "--directory",
             temp_dir,
         ]
