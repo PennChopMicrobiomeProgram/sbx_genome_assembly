@@ -2,9 +2,9 @@ name: Check Conda Envs
 
 on:
   pull_request:
-    branches: [main]
+    branches: [ master, main ]
   push:
-    branches: [main]
+    branches: [ master, main ]
   workflow_dispatch:
     inputs:
       envs:

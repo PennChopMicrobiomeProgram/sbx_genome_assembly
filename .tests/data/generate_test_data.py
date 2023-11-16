@@ -124,4 +124,5 @@ def generateN(genome: str, reads: str, n: int, reads_per_sample: int = 50000):
         os.remove(reads + str(i) + "_R1.fastq")
         os.remove(reads + str(i) + "_R2.fastq")
 
+
 generateN("raw/GCA_000463895.2_ASM46389v2_genomic.fna", "reads/GCA_000463895", 3)
