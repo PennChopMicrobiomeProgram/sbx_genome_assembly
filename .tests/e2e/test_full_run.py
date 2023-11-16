@@ -11,8 +11,8 @@ from pathlib import Path
 def setup():
     temp_dir = Path(tempfile.mkdtemp())
 
-    reads_fp = Path(".tests/data/reads/")
-    hosts_fp = Path(".tests/data/hosts/")
+    reads_fp = Path(".tests/data/reads/").resolve()
+    hosts_fp = Path(".tests/data/hosts/").resolve()
 
     project_dir = temp_dir / "project/"
 
