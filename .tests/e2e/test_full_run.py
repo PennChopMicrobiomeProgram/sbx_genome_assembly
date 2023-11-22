@@ -73,3 +73,5 @@ def test_full_run(run_sunbeam):
     assert os.path.exists(all_SCCG_fp)
     with open(all_SCCG_fp) as f:
         assert len(f.readlines()) > 140, f"Wasn't able to find at least 70 hits"
+
+    assert os.path.exists(benchmarks_fp)
