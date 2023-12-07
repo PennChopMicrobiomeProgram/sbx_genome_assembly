@@ -88,7 +88,11 @@ rule checkm_tree:
 rule checkm_summary:
     input:
         done=ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
-        lineage=ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "lineage.ms",
+        lineage=ASSEMBLY_FP
+        / "checkm_output"
+        / "tree_output"
+        / "{sample}"
+        / "lineage.ms",
     output:
         ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv",
     benchmark:
