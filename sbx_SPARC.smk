@@ -19,12 +19,13 @@ rule run_spades_paired:
     params:
         output_dir=str(ASSEMBLY_FP / "spades_bins" / "{sample}"),
         log_fp=str(ASSEMBLY_FP / "spades_bins" / "{sample}" / "spades.log"),
+        extra=Cfg["sbx_genome_assembly"]["spades_opts"],
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
-        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log}
+        spades.py -1 {input.r1} -2 {input.r2} -o {params.output_dir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 {params.extra} 2>&1 | tee {log}
         cat {params.log_fp} >> {log}
         """
 
@@ -44,7 +45,7 @@ rule run_spades_unpaired:
         copy_from=str(ASSEMBLY_FP / "spades" / "{sample}" / "contigs.fasta"),
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         spades.py --s 1 {input.r1} -o {params.outdir} -t {threads} --cov-cutoff 5.0 --phred-offset 33 2>&1 | tee {log} && \
@@ -66,6 +67,7 @@ rule checkm_tree:
         ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta",
     output:
         ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
+        ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "lineage.ms",
     benchmark:
         BENCHMARK_FP / "checkm_tree_{sample}.tsv"
     log:
@@ -78,14 +80,19 @@ rule checkm_tree:
         taxon_yml=taxon_yml if "taxon_yml" in locals() else None,
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/checkm_tree.py"
 
 
 rule checkm_summary:
     input:
-        ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
+        done=ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
+        lineage=ASSEMBLY_FP
+        / "checkm_output"
+        / "tree_output"
+        / "{sample}"
+        / "lineage.ms",
     output:
         ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv",
     benchmark:
@@ -97,7 +104,7 @@ rule checkm_summary:
         checkm_yml=checkm_yml,
         taxon_yml=taxon_yml if "taxon_yml" in locals() else None,
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/checkm_summary.py"
 
@@ -142,7 +149,7 @@ rule index_assembled_genomes:
             / "{sample}_reformatted_contigs.fa"
         ),
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         mkdir -p {params.bwa_dir} && \
@@ -183,7 +190,7 @@ rule align_2_genome:
         ),
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         bwa mem -M -t {threads} \
@@ -210,7 +217,7 @@ rule assembly_samtools_convert:
         sort_log=LOG_FP / "assembly_samtools_convert_sort_{sample}.log",
     threads: Cfg["sbx_genome_assembly"]["threads"]
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         samtools view -@ {threads} -b {input} 2>&1 | tee {log.view_log} | \
@@ -228,7 +235,7 @@ rule index_samtools:
     log:
         LOG_FP / "index_samtools_{sample}.log",
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         "samtools index {input} {output} 2>&1 | tee {log}"
 
@@ -243,7 +250,7 @@ rule samtools_get_coverage_filtered:
     log:
         LOG_FP / "samtools_get_coverage_filtered_{sample}.log",
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/samtools_get_coverage_filtered.py"
 
@@ -273,7 +280,7 @@ rule samtools_summarize_num_mapped_reads:
     log:
         LOG_FP / "samtools_summarize_num_mapped_reads_{sample}.log",
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     shell:
         """
         samtools idxstats {input} | tee {log} | (sed 's/^/{wildcards.sample}\t/') > {output}
@@ -295,39 +302,6 @@ rule samtools_summarize_numReads:
         "(cat {input}) > {output}"
 
 
-def sliding_window_coverage(genome, bamfile, sample, output_fp, N, sampling):
-    print(genome)
-    print(bamfile)
-    print(sample)
-    print(output_fp)
-    print(N)
-    print(sampling)
-
-    output_rows = []
-    args = ["samtools", "depth", "-aa", bamfile]
-    p = subprocess.Popen(args, stdout=subprocess.PIPE, universal_newlines=True)
-    # Organize into a list of depths for each segment, streaming in text
-    reader = csv.reader(p.stdout, delimiter="\t")
-    data = {}
-    for row in reader:
-        if not data.get(row[0]):
-            data[row[0]] = []
-        data[row[0]].append(int(row[2]))
-
-    fields = ["Genome", "Segment", "Sample", "Location", "Average"]
-    with open(output_fp, "w") as f:
-        writer = csv.writer(f)
-        writer.writerow(fields)
-        for segment in data.keys():
-            if len(data[segment]) > sampling:
-                moving_avg = numpy.convolve(
-                    data[segment], numpy.ones((N,)) / N, mode="full"
-                )
-                for i, x in enumerate(moving_avg):
-                    if i % sampling == 0:
-                        writer.writerow([genome, segment, sample, i, x])
-
-
 rule samtools_get_sliding_coverage:
     input:
         ASSEMBLY_FP / "read_mapping" / "{sample}" / "bwa" / "{sample}.bam",
@@ -340,9 +314,8 @@ rule samtools_get_sliding_coverage:
     params:
         window_size=Cfg["sbx_genome_assembly"]["window_size"],
         sampling=Cfg["sbx_genome_assembly"]["sampling"],
-        sliding_window_coverage=sliding_window_coverage,
     conda:
-        "sbx_genome_assembly_env.yml"
+        "envs/sbx_genome_assembly_env.yml"
     script:
         "scripts/samtools_get_sliding_coverage.py"
 

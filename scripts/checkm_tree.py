@@ -13,15 +13,26 @@ with open(snakemake.log[0], "w") as log:
         rank = str(snakemake.params.rank_yml[snakemake.wildcards.sample])
         args += ["taxonomy_wf", "-t", f"{snakemake.threads}", f"{rank}", f"{taxon}"]
     else:
-        args += ["lineage_wf", "-t", f"{snakemake.threads}"]
+        args += [
+            "lineage_wf",
+            "-t",
+            f"{snakemake.threads}",
+            "-x",
+            "fasta",
+            "--tab_table",
+            "-f",
+            f"{snakemake.params.tree_output}/checkm_lineage.txt",
+        ]
 
     args += [f"{snakemake.params.bins}", f"{snakemake.params.tree_output}"]
 
     try:
         checkm_output = sp.check_output(args)
     except sp.CalledProcessError as e:
+        sys.stderr.write(e.output.decode())
         log.write(e.output.decode())
         sys.exit(e.returncode)
+    sys.stdout.write(checkm_output.decode())
     log.write(checkm_output.decode())
 
-    Path(snakemake.output).touch()
+    Path(snakemake.output[0]).touch()

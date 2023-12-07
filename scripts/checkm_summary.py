@@ -2,7 +2,6 @@ import subprocess as sp
 import sys
 
 with open(snakemake.log[0], "w") as log:
-    taxon = "lineage"
     if (
         snakemake.params.checkm_yml
         and snakemake.wildcards.sample in snakemake.params.taxon_yml
@@ -19,7 +18,7 @@ with open(snakemake.log[0], "w") as log:
                 "--tab_table",
                 "--file",
                 f"{snakemake.output}",
-                f'"{snakemake.params.tree_output}/{taxon}.ms"',
+                f"{snakemake.input.lineage}",
                 f"{snakemake.params.tree_output}",
             ]
         )

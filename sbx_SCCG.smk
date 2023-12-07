@@ -80,7 +80,7 @@ rule prokka:
     params:
         outdir=str(ANNOTATION_FP / "prokka" / "{sample}"),
     conda:
-        "sbx_SCCG_prokka_env.yml"
+        "envs/sbx_SCCG_prokka_env.yml"
     shell:
         """
         prokka --compliant --centre CHOP --outdir {params.outdir} --locustag {wildcards.sample} --prefix {wildcards.sample} --force {input} 2>&1 | tee {log}
@@ -109,7 +109,7 @@ rule hmmpress:
     log:
         LOG_FP / "hmmpress.log",
     conda:
-        "sbx_SCCG_env.yml"
+        "envs/sbx_SCCG_env.yml"
     shell:
         "hmmpress {input} 2>&1 | tee {log}"
 
@@ -130,7 +130,7 @@ rule hmmscan:
     params:
         hmm=os.path.join(get_genome_assembly_path(), "genes.hmm"),
     conda:
-        "sbx_SCCG_env.yml"
+        "envs/sbx_SCCG_env.yml"
     shell:
         "hmmscan -o {log} --tblout {output} {params.hmm} {input.faa}"
 
