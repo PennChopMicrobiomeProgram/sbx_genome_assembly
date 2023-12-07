@@ -67,6 +67,7 @@ rule checkm_tree:
         ASSEMBLY_FP / "spades_bins" / "{sample}" / "contigs.fasta",
     output:
         ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
+        ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "lineage.ms",
     benchmark:
         BENCHMARK_FP / "checkm_tree_{sample}.tsv"
     log:
@@ -86,7 +87,8 @@ rule checkm_tree:
 
 rule checkm_summary:
     input:
-        ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
+        done=ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "tree_done",
+        lineage=ASSEMBLY_FP / "checkm_output" / "tree_output" / "{sample}" / "lineage.ms",
     output:
         ASSEMBLY_FP / "checkm_output" / "summary" / "{sample}" / "extended_summary.tsv",
     benchmark:
