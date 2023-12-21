@@ -128,7 +128,7 @@ rule checkm_summarize:
 
 rule index_assembled_genomes:
     input:
-        ASSEMBLY_FP / "anvio" / "{sample}" / "{sample}_reformatted_contigs.fa",  #this file comes from anvio
+        ASSEMBLY_FP / "hmmer" / "{sample}" / "{sample}_reformatted_contigs.fa",
     output:
         ASSEMBLY_FP
         / "read_mapping"
